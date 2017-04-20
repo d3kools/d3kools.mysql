@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then 
+    echo usage: $0 DATABASE exit;
+fi
+
+for i in $( mysql -D $1 -e "SHOW TABLES;" | sed '1d' ); do
+	echo "table: " $i
+	mysql_d3dump_schema $1 $i
+	mysql_d3dump_data $1 $i
+done
