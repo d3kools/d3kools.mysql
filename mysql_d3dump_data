@@ -7,4 +7,7 @@ if [ -z "$2" ]; then
     echo usage: $0 DATABASE TABLE; exit;
 fi
 
-mysqldump --compact --no-create-info $1 $2 > $1__$2--data.sql
+arguments='--no-create-info --skip-extended-insert'
+dump='mysqldump --compact'
+# mysqldump --result-file=DB__TABLE--data.sql DB TABLE
+$dump $arguments --result-file=$1__$2--data.sql $1 $2

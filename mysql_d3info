@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ -z "$1" ]; then 
-	echo usage: $0 DATABASE exit;
+    echo usage: $0 DATABASE; exit;
 fi
 COLUMNS_QUERY='SELECT count(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name ='
 TABLE_QUERY='SELECT count(*) FROM'
