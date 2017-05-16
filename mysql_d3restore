@@ -1,0 +1,34 @@
+#!/bin/bash
+
+database='c2aps1'
+
+filename=$database--solid.sql
+
+# if [ -z "$1" ]; then 
+    # echo usage: $0 DATABASE; exit;
+# fi
+# filename=$1
+
+if [ ! -e "$filename" ]; then 
+    echo not found : $filename; exit;
+    # echo DOIT: $0 DATABASE
+fi
+
+for table in $( mysql -D $database -e "SHOW TABLES;" | sed '1d' ); do
+    echo "drop table: " $table
+    mysql -D $database -e "DROP TABLE $table;"
+done
+
+echo 'importing solid SQL...'
+mysql $database < $filename
+echo 'done.'
+
+# for sqlfile in $( ls -1 *--schema.sql ); do
+    # echo "sql file: " $sqlfile
+    # mysql $database < $sqlfile
+    # mysql_d3import $i
+    # mysql_d3dump_schema $1 $i
+    # mysql_d3dump_data $1 $i
+# done
+
+# echo $filename
