@@ -10,14 +10,13 @@ if [ ! -d $root ]; then
     mkdir $root
 fi
 mkdir $root/$folder
+
 cd $root/$folder
-echo qwe > yoooo.txt
 
 for i in $( mysql -D $1 -e "SHOW TABLES;" | sed '1d' ); do
     echo "table: " $i
     mysql_d3dump_schema $1 $i
     mysql_d3dump_data $1 $i
-    mysql_d3dump_solid $1 $i
 done
 
 mysql_d3dump_solid $1

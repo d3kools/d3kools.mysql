@@ -7,6 +7,6 @@ if [ -z "$2" ]; then
     echo usage: $0 DATABASE TABLE; exit;
 fi
 
-$arguments='--no-data'
+arguments='--no-data'
 dump='mysqldump --compact'
 $dump $arguments --result-file=$1__$2--schema.sql $1 $2
