@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then 
+    echo usage: $0 DATABASE; exit;
+fi
+
+for TABLE in $( mysql -D $1 -e "SHOW TABLES;" | sed '1d' ); do
+	mysql -D $1 -e "TRUNCATE '$TABLE'";
+done
