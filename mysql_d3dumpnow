@@ -1,0 +1,3 @@
+#!/bin/sh
+
+mysql_d3dump_all c2aps1
