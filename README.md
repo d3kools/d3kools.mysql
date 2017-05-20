@@ -21,6 +21,11 @@ usage: `mysql_d3info DATABASE`
 
 ```$TABLE (count(COLUMN_NAME)) : count(*) $TABLE```
 
+### mysql_d3credentials
+usage: `mysql_d3credentials`
+
+show all users and their host/server/table entnries
+
 ### mysql_d3truncate
 truncate all tables in the database
 
@@ -61,3 +66,6 @@ output:
 sql files will be created automatically in new folder with timestamp name each time `mysqldump_db` runs
 
 ### mysql_d3restore
+
+#### Chmod checkout
+`chmod ug+x mysql_d3*``
