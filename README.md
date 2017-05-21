@@ -1,13 +1,19 @@
 
 # d3kools.mysql
 
-Sugar commands for mysql and mysqldump routines
+Sugar commands for mysql and mysqldump routines.
 
-@specific arguments could be appended with d3kmysql.cfg settings
+## Installation
 
-Main user settings is 
+### github clone
+```bash
+git clone https://github.com/d3kools/d3kools.mysql.git
+cd d3kools.mysql
+sudo ./install.sh
+```
 
 ## Commands
+* mysql_d3dump
 * mysql_d3dump_all
 * mysql_d3dump_data
 * mysql_d3dump_schema
@@ -41,12 +47,16 @@ output file : `db--solid.sql`
 ### mysql_d3dump_data
 dump only data from specified table
 
+alias for `mysql_d3dump schema`
+
 usage: `mysql_d3dump_data DATABASE TABLE`
 
 output file : `db__table--data.sql`
 
 ### mysql_d3dump_schema
 dump only specified schema table
+
+alias for `mysql_d3dump schema`
 
 usage: `mysql_d3dump_schema DATABASE TABLE`
 
@@ -97,4 +107,11 @@ now your `~/.my.cnf` may be extended with
 ```
 
 #### Chmod checkout
-`chmod ug+x mysql_d3*``
+`chmod 775 mysql_d3*`
+
+#### todo
+
+Specific arguments could be appended with ~/.mysql_d3.rc settings.
+
+Main user settings is arguments,suffix
+
