@@ -1,13 +1,14 @@
 #!/bin/bash
 
-database='c2aps1'
+# database='c2aps1'
 
 filename=$database--solid.sql
 
-# if [ -z "$1" ]; then 
-    # echo usage: $0 DATABASE; exit;
-# fi
-# filename=$1
+if [ -z "$1" ]; then 
+    echo usage: $0 DATABASE;
+    exit;
+fi
+filename=$1
 
 if [ ! -e "$filename" ]; then 
     echo not found : $filename; exit;
