@@ -3,6 +3,14 @@
 proj=mysqld3kools
 basedir=$(readlink -f $(dirname $0))
 
+if !(test -z $1); then
+    if [ $1 = 'relative' ]; then
+        echo relat;
+    else
+        echo uknown
+    fi
+fi
+
 function usrlocal_install {
     usrlocal=/usr/local/$proj
     if test -d $usrlocal; then
