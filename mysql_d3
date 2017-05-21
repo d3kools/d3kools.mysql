@@ -1,3 +1,75 @@
 #!/bin/bash
 
-echo mysql_d3
+cmd=`basename $0`
+# ==========================
+# Import functions : [ checkout_database , ]
+source `which mysql_d3_librc`
+# exit
+# ==========================
+
+avaliable_commands_list='help info check'
+
+function usage {
+    echo;
+    echo 'Sugar mysql & mysqldump tool';
+    echo;
+    echo usage:;
+    echo '    '$cmd help;
+    echo '    '$cmd info\|next DATABASE;
+    echo example:;
+    echo '    '$cmd into wpb;
+    echo;
+}
+
+checkout_command $@
+
+if [ -z $mysql_group_suffix ]; then
+    # echo could not extend mysqldump :  \$mysql_group_suffix is null;
+    cmd_mysql="mysql";
+else
+    cmd_mysql="mysql --defaults-group-suffix=$mysql_group_suffix";
+fi
+
+if test $1 == 'help'; then
+    usage;
+    exit;
+fi
+
+if test $1 == 'check'; then
+    $cmd_mysql -e '\c' 2> /dev/null;
+    if [ $? -eq 0 ]; then
+        echo 'Connection : OK'
+    else
+        echo 'Connection : Fails'
+    fi
+    exit;
+fi
+
+if test $1 == 'db'; then
+    # echo mysql -D $2 -e "SHOW TABLES;";
+    # echo $cmd_mysql ;
+    # echo q;
+    exit;
+fi
+
+if test $1 == 'info'; then
+    checkout_database $@
+    COLUMNS_QUERY='SELECT count(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name =';
+    TABLE_QUERY='SELECT count(*) FROM';
+
+    exit;
+    function query {
+        mysql -D $2 -e "SHOW TABLES;" | sed '1d'
+    }
+    for TABLE in $( mysql -D $2 -e "SHOW TABLES;" | sed '1d' ); do
+        echo $TABLE "("\
+        $(mysql -D $2 -e "$COLUMNS_QUERY '$TABLE'" | sed "1d")\
+        ") : "\
+        $(mysql -D $2 -e "$TABLE_QUERY $TABLE" | sed "1d")\
+        ;
+    done
+    exit;
+fi
+
+echo Command \`$1\` does not recognized
+avaliable;
