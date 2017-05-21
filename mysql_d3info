@@ -1,15 +1,2 @@
 #!/bin/bash
-
-if [ -z "$1" ]; then 
-    echo usage: $0 DATABASE; exit;
-fi
-COLUMNS_QUERY='SELECT count(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name ='
-TABLE_QUERY='SELECT count(*) FROM'
-
-for TABLE in $( mysql -D $1 -e "SHOW TABLES;" | sed '1d' ); do
-echo $TABLE "("\
-$(mysql -D $1 -e "$COLUMNS_QUERY '$TABLE'" | sed "1d")\
-") : "\
-$(mysql -D $1 -e "$TABLE_QUERY $TABLE" | sed "1d")\
-;
-done
+mysql_d3 info $1
