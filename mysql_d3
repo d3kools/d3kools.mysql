@@ -45,6 +45,16 @@ if test $1 == 'check'; then
     exit;
 fi
 
+if test $1 == 'credentials'; then
+    function query { $cmd_mysql -D database=mysql -e "$1"; };
+    query "SELECT Host,User,Password FROM user";
+    query "SELECT Host,Db,User FROM db";
+    query "SELECT * FROM servers";
+    query "SELECT Host,Db FROM host";
+    query "SELECT Host,Db,User,Table_name FROM tables_priv";
+    exit;
+fi
+
 if test $1 == 'db'; then
     # echo mysql -D $2 -e "SHOW TABLES;";
     # echo $cmd_mysql ;
