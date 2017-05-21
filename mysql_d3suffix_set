@@ -1,15 +1,2 @@
 #!/bin/bash
-
-# export mysql_group_suffix='your ~/.my.cnf suffix'
-# eval `mysql_d3setsuffix`
-if [ -z $mysql_group_suffix ]; then
-	echo echo \$mysql_group_suffix has not been exported to your environment
-	echo echo usage:
-	echo echo export mysql_group_suffix='yourdatabasesuffix'
-else
-	echo echo \\\$mysql_group_suffix now is : \$mysql_group_suffix \;
-	echo SUFFIX=\"--defaults-group-suffix=\$mysql_group_suffix\" \;
-	echo echo \\\$SUFFIX : \$SUFFIX \;
-	echo alias mysql=\"mysql \$SUFFIX\" \;
-	echo alias mysqldump=\"mysqldump \$SUFFIX\" \;
-fi
+echo export mysql_group_suffix=$1

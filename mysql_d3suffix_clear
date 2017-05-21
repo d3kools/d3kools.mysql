@@ -1,0 +1,2 @@
+#!/bin/bash
+echo unset mysql_group_suffix
