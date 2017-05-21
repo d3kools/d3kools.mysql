@@ -1,13 +1,2 @@
 #!/bin/bash
-
-if [ -z "$1" ]; then 
-    echo usage: $0 DATABASE TABLE; exit;
-fi
-if [ -z "$2" ]; then 
-    echo usage: $0 DATABASE TABLE; exit;
-fi
-
-arguments='--no-create-info --skip-extended-insert'
-dump='mysqldump --compact'
-# mysqldump --result-file=DB__TABLE--data.sql DB TABLE
-$dump $arguments --result-file=$1__$2--data.sql $1 $2
+mysql_d3dump data $1 $2

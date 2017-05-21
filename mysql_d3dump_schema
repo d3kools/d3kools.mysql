@@ -1,12 +1,2 @@
 #!/bin/bash
-
-if [ -z "$1" ]; then 
-    echo usage: $0 DATABASE TABLE; exit;
-fi
-if [ -z "$2" ]; then 
-    echo usage: $0 DATABASE TABLE; exit;
-fi
-
-arguments='--no-data'
-dump='mysqldump --compact'
-$dump $arguments --result-file=$1__$2--schema.sql $1 $2
+mysql_d3dump schema $1 $2
