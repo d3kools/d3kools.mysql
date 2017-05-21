@@ -2,10 +2,14 @@
 
 # echo 0: $0; echo 1: $1; echo 2: $2; echo 3: $3;
 cmd=`basename $0`
-function avaliable {
-    echo 'Avaliable commands : help data schema solid all';
-    echo
-}
+
+# ==========================
+# Import functions : [ checkout_database , ]
+source `which mysql_d3_librc`
+# exit
+# ==========================
+
+avaliable_commands_list='help data schema solid all'
 function usage {
     echo ''
     echo 'Export data to database__table--type.sql file , wo output'
@@ -20,30 +24,16 @@ function usage {
     echo '    '$cmd all wpb
     echo
 }
-function checkout_command {
-    if [ -z "$1" ]; then
-        avaliable;
-        exit;
-    fi
-}
-function checkout_database {
-    if [ -z "$2" ]; then
-        echo 'specify database:'
-        echo '    '$cmd $1 DATABASE;
-        echo
-        exit;
-    fi
-}
-function checkout_table {
-    if [ -z "$3" ]; then
-        echo 'specify table:'
-        echo '    '$cmd $1 DATABASE TABLE;
-        echo
-        exit;
-    fi
-}
 
 checkout_command $@
+
+# cmd pseudo-aliases cause of environment alias incapacity
+if [ -z $mysql_group_suffix ]; then
+    # echo could not extend mysqldump :  \$mysql_group_suffix is null;
+    cmd_dump="mysqldump --compact";
+else
+    cmd_dump="mysqldump --defaults-group-suffix=$mysql_group_suffix --compact";
+fi
 
 if test $1 == 'help'; then
     usage;
@@ -52,16 +42,35 @@ fi
 
 if test $1 == 'solid'; then
     checkout_database $@
-    cmd='mysqldump --compact'
     file=$2--solid.sql
-    $cmd --result-file=$file $2
+    $cmd_dump --result-file=$file $2
     echo created: $file
     exit;
 fi
 
 if test $1 == 'all'; then
     checkout_database $@
-    echo 'all >> ' $2;
+
+    # checkout_specified_database $2
+    dumpcontainer='mysqldump_'$2
+    if [ ! -d $dumpcontainer ]; then
+        mkdir $dumpcontainer
+    fi
+    exit;
+    folder=`date '+%Y%m%d-%H%M%S'`
+    mkdir $dumpcontainer/$folder
+
+    cd $dumpcontainer/$folder
+
+    for i in $( mysql -D $2 -e "SHOW TABLES;" | sed '1d' ); do
+        echo "table: " $i
+        mysql_d3dump_schema $2 $i
+        mysql_d3dump_data $2 $i
+    done
+
+    mysql_d3dump_solid $2
+    cd ../..
+
     exit;
 fi
 
@@ -69,20 +78,23 @@ if test $1 == 'data'; then
     # mysqldump --compact --no-create-info --skip-extended-insert --result-file=DB__TABLE--data.sql DB TABLE
     checkout_database $@
     checkout_table $@
-    cmd='mysqldump --compact'
     arguments='--no-create-info --skip-extended-insert'
     file=$2__$3--data.sql
-    $cmd $arguments --result-file=$file $2 $3
+    $cmd_dump $arguments --result-file=$file $2 $3
     exit;
 fi
 
 if test $1 == 'schema'; then
     checkout_database $@
     checkout_table $@
-    cmd='mysqldump --compact'
     arguments='--no-data'
     file=$2__$3--schema.sql
-    $cmd $arguments --result-file=$file $2 $3
+    echo
+    alias -p
+    echo
+    echo $cmd_dump $arguments --result-file=$file $2 $3
+    $cmd_dump $arguments $2 $3
+    echo
     exit;
 fi
 
