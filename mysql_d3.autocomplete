@@ -1,0 +1,20 @@
+# mysql_d3.autocomplete
+_script_d3() {
+    local cur opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    opts="--help --verbose --version"
+    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    return 0
+}
+_script_d3dump() {
+    local cur opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    opts="help data schema solid all"
+    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    return 0
+}
+
+complete -o nospace -F _script_d3 mysql_d3
+complete -o nospace -F _script_d3dump mysql_d3dump
