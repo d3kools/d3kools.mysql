@@ -3,6 +3,10 @@
 
 Sugar commands for mysql and mysqldump routines.
 
+Simple workout with single database.
+No user, server and password parametres.
+Such parametres as server, database, user, password have to be specified via suffix sintax.
+
 ## Installation
 
 ### github clone
@@ -16,6 +20,29 @@ sudo ./install.sh
 wget -qO- https://raw.githubusercontent.com/d3kools/d3kools.mysql/master/README.md | bash
 ```
 
+### add suffix
+
+Add database, user, password (and server if needs) in your `~/.my.cnf` to new sections with *xmpl* suffix : [client**xmpl**] and [mysql**xmpl**]
+
+```ini
+[client]
+...
+[mysql]
+...
+[clientxmpl]
+...
+[mysqlxmpl]
+...
+```
+
+and activate *xmpl* with:
+```bash
+export mysql_group_suffix=xmpl
+eval `mysql_d3suffix_set`
+```
+
+this appends two aliases: *mysql* & *mysqldump* with [defaults-group-suffix] (https://dev.mysql.com/doc/refman/5.7/en/option-file-options.html#option_general_defaults-group-suffix) option
+
 ## Commands
 * mysql_d3
 * mysql_d3dump
@@ -27,15 +54,23 @@ wget -qO- https://raw.githubusercontent.com/d3kools/d3kools.mysql/master/README.
 * mysql_d3credentials
 * mysql_d3truncate
 * mysql_d3restore
-* mysql_d3setsuffix
+* mysql_d3suffix_set
+
+### mysql_d3info
+
+`mysql_d3 info|credentials|check`
 
 ### mysql_d3info
 usage: `mysql_d3info DATABASE`
+
+alias for `mysql_d3 info`
 
 ```$TABLE (count(COLUMN_NAME)) : count(*) $TABLE```
 
 ### mysql_d3credentials
 usage: `mysql_d3credentials`
+
+alias for `mysql_d3 credentials`
 
 show all users and their host/server/table entries
 
@@ -45,6 +80,9 @@ truncate all tables in the database
 usage: `mysql_d3truncate DATABASE`
 
 ### mysql_d3dump
+
+`mysql_d3dump solid|data|schema|all`
+
 Aggregator for:
 
 - mysql_d3dump_solid
@@ -100,7 +138,8 @@ sql files will be created automatically in new folder with timestamp name each t
 
 executes `db__*--*.sql` files
 
-### mysql_d3setsuffix
+### mysql_d3suffix_set
+#### description
 sets aliases for mysql and mysqldump:
 
 `mysql --defaults-group-suffix=suffix`
@@ -111,13 +150,20 @@ sets aliases for mysql and mysqldump:
 
 suffix value is taken from environment variable *$mysql_group_suffix*
 
+#### script variant
 run:
 
 ```bash
-$ export mysql_group_suffix=suffix;
-$ eval `mysql_d3setsuffix`;
+$ export mysql_group_suffix=suffix
+$ eval `mysql_d3suffix_set`
 ```
 
+#### one line variant
+```bash
+$ mysql_d3suffix set suffix
+```
+
+#### .my.cnf
 now your `~/.my.cnf` may be extended with
 
 ```ini
@@ -125,7 +171,11 @@ now your `~/.my.cnf` may be extended with
 ...
 [mysqlsuffix]
 ...
+
+
 ```
+
+### Stuff
 
 #### Chmod checkout
 `chmod 775 mysql_d3*`
