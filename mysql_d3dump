@@ -54,7 +54,7 @@ if test $1 == 'solid'; then
     checkout_database $@
     cmd='mysqldump --compact'
     file=$2--solid.sql
-    echo $cmd --result-file=$file $2
+    $cmd --result-file=$file $2
     echo created: $file
     exit;
 fi
@@ -72,7 +72,7 @@ if test $1 == 'data'; then
     cmd='mysqldump --compact'
     arguments='--no-create-info --skip-extended-insert'
     file=$2__$3--data.sql
-    echo $cmd $arguments --result-file=$file $2 $3
+    $cmd $arguments --result-file=$file $2 $3
     exit;
 fi
 
@@ -82,7 +82,7 @@ if test $1 == 'schema'; then
     cmd='mysqldump --compact'
     arguments='--no-data'
     file=$2__$3--schema.sql
-    echo $cmd $arguments --result-file=$file $2 $3
+    $cmd $arguments --result-file=$file $2 $3
     exit;
 fi
 
