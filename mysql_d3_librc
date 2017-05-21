@@ -1,0 +1,34 @@
+#!/bin/bash
+
+function avaliable {
+    echo "Avaliable commands : $avaliable_commands_list";
+    echo;
+}
+
+function checkout_command {
+    if [ -z "$1" ]; then
+        avaliable;
+        exit;
+    fi
+}
+function checkout_database {
+    if [ -z "$2" ]; then
+        echo 'specify database:';
+        echo '    '$cmd $1 DATABASE;
+        echo;
+        exit;
+    fi
+}
+function checkout_table {
+    if [ -z "$3" ]; then
+        echo 'specify table:';
+        echo '    '$cmd $1 DATABASE TABLE;
+        echo;
+        exit;
+    fi
+}
+
+function checkout_specified_database {
+    return 2;
+}
+# exit
