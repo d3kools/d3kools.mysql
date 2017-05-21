@@ -24,7 +24,7 @@ usage: `mysql_d3info DATABASE`
 ### mysql_d3credentials
 usage: `mysql_d3credentials`
 
-show all users and their host/server/table entnries
+show all users and their host/server/table entries
 
 ### mysql_d3truncate
 truncate all tables in the database
@@ -66,6 +66,35 @@ output:
 sql files will be created automatically in new folder with timestamp name each time `mysqldump_db` runs
 
 ### mysql_d3restore
+
+@todo:
+
+### mysql_d3setsuffix
+sets aliases for mysql and mysqldump:
+
+`mysql --defaults-group-suffix=suffix`
+
+`mysqldump --defaults-group-suffix=suffix`
+
+*--defaults-group-suffix* allows to use multiply sections in the `~/.my.cnf` config file
+
+suffix value is taken from environment variable *$mysql_group_suffix*
+
+run:
+
+```bash
+$ export mysql_group_suffix=suffix;
+$ eval `mysql_d3setsuffix`;
+```
+
+now your `~/.my.cnf` may be extended with
+
+```ini
+[clientsuffix]
+...
+[mysqlsuffix]
+...
+```
 
 #### Chmod checkout
 `chmod ug+x mysql_d3*``
