@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# export mysql_group_suffix='your ~/.my.cnf suffix'
+mysql_default_group_suffix="--defaults-group-suffix=$mysql_group_suffix"
+alias mysql="mysql $mysql_default_group_suffix"
+alias mysqldump="mysqldump $mysql_default_group_suffix"
