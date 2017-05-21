@@ -3,7 +3,7 @@ _script_d3() {
     local cur opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
-    opts="--help --verbose --version"
+    opts="help info credentials check db"
     COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
     return 0
 }
