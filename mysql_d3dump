@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# echo 0: $0; echo 1: $1; echo 2: $2; echo 3: $3;
+cmd=`basename $0`
+function avaliable {
+    echo 'Avaliable commands : help data schema solid all';
+    echo
+}
+function usage {
+    echo ''
+    echo 'Export data to database__table--type.sql file , wo output'
+    echo ''
+    echo usage:
+    echo '    '$cmd help;
+    echo '    '$cmd all\|solid DATABASE;
+    echo '    '$cmd data\|schema DATABASE [TABLE];
+    echo example:
+    echo '    '$cmd data mysql Users
+    echo '    '$cmd schema mysql Users
+    echo '    '$cmd all wpb
+    echo
+}
+function checkout_command {
+    if [ -z "$1" ]; then
+        avaliable;
+        exit;
+    fi
+}
+function checkout_database {
+    if [ -z "$2" ]; then
+        echo 'specify database:'
+        echo '    '$cmd $1 DATABASE;
+        echo
+        exit;
+    fi
+}
+function checkout_table {
+    if [ -z "$3" ]; then
+        echo 'specify table:'
+        echo '    '$cmd $1 DATABASE TABLE;
+        echo
+        exit;
+    fi
+}
+
+checkout_command $@
+
+if test $1 == 'help'; then
+    usage;
+    exit;
+fi
+
+if test $1 == 'solid'; then
+    checkout_database $@
+    cmd='mysqldump --compact'
+    file=$2--solid.sql
+    echo $cmd --result-file=$file $2
+    echo created: $file
+    exit;
+fi
+
+if test $1 == 'all'; then
+    checkout_database $@
+    echo 'all >> ' $2;
+    exit;
+fi
+
+if test $1 == 'data'; then
+    # mysqldump --compact --no-create-info --skip-extended-insert --result-file=DB__TABLE--data.sql DB TABLE
+    checkout_database $@
+    checkout_table $@
+    cmd='mysqldump --compact'
+    arguments='--no-create-info --skip-extended-insert'
+    file=$2__$3--data.sql
+    echo $cmd $arguments --result-file=$file $2 $3
+    exit;
+fi
+
+if test $1 == 'schema'; then
+    checkout_database $@
+    checkout_table $@
+    cmd='mysqldump --compact'
+    arguments='--no-data'
+    file=$2__$3--schema.sql
+    echo $cmd $arguments --result-file=$file $2 $3
+    exit;
+fi
+
+echo Command \`$1\` does not recognized
+avaliable;
