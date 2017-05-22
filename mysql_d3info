@@ -4,7 +4,7 @@
 # Import functions
 source `which mysql_d3_librc`
 
-avaliable_commands_list='help info check'
+avaliable_commands_list='help structure db check credentials'
 
 function usage {
     echo;

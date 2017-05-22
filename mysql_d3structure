@@ -1,2 +1,2 @@
 #!/bin/bash
-mysql_d3 info $1
+mysql_d3info structure $1
