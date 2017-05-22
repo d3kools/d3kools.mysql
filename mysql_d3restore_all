@@ -1,2 +1,2 @@
 #!/bin/bash
-mysql_d3restore all $1
+mysql_d3restore all $1 $2
