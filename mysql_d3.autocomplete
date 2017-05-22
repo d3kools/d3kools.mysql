@@ -28,7 +28,7 @@ _script_d3restore() {
     local cur opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
-    opts="help data schema solid all truncate truncatetable truncatedb"
+    opts="help data schema solid all truncate drop"
     COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
     return 0
 }
