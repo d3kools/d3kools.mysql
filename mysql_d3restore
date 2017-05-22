@@ -30,17 +30,16 @@ if test $1 == 'help'; then
 fi
 
 if test $1 == 'solid'; then
-    # echo '$0:' $0; echo '$1:' $1; echo '$2:' $2; echo '$3:' $3; echo '$4:' $4;
     checkout_database $@
     checkout_folder $@
     # sqlfile=$( ls -1 *.sql | grep -e '--solid.sql' | head -n 1 );
-    sqlfile=$2--solid.sql;
     cd $3;
+    sqlfile=$2--solid.sql;
     if [ -f $sqlfile ]; then
         echo injecting $sqlfile ...;
         $cmd_mysql -D $2 < $sqlfile;
     else
-        echo $sqlfile not found;
+        echo error: $3/$sqlfile not found;
     fi
     cd $oldpwd;
     exit;
@@ -51,6 +50,7 @@ if test $1 == 'all'; then
     # mysqlimport
     checkout_database $@
     checkout_folder $@
+    cd $3;
     sqlfile=$( ls -1 *.sql | grep -e '--solid.sql' | head -n 1 );
     cd $oldpwd;
     exit;
@@ -59,15 +59,26 @@ fi
 if test $1 == 'data'; then
     checkout_database $@
     checkout_table $@
-    echo 'mysql_d3restore >> data'
-    cd $oldpwd;
+    sqlfile=$2__$3--data.sql;
+    if [ -f $sqlfile ]; then
+        echo injecting $sqlfile ...;
+        $cmd_mysql -D $2 < $sqlfile;
+    else
+        echo error: $sqlfile not found;
+    fi
     exit;
 fi
 
 if test $1 == 'schema'; then
     checkout_database $@
     checkout_table $@
-    echo 'mysql_d3restore >> schema'
+    sqlfile=$2__$3--schema.sql;
+    if [ -f $sqlfile ]; then
+        echo injecting $sqlfile ...;
+        $cmd_mysql -D $2 < $sqlfile;
+    else
+        echo error: $sqlfile not found;
+    fi
     exit;
 fi
 
