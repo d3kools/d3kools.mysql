@@ -1,0 +1,2 @@
+#!/bin/bash
+mysql_d3restore solid $1
