@@ -1,5 +1,17 @@
 #!/bin/bash
 
+cmd=`basename $0`
+
+# cmd pseudo-aliases cause of environment alias incapacity
+if [ -z $mysql_group_suffix ]; then
+    # echo could not extend mysqldump :  \$mysql_group_suffix is null;
+    cmd_mysql="mysql";
+    cmd_dump="mysqldump --compact";
+else
+    cmd_mysql="mysql --defaults-group-suffix=$mysql_group_suffix";
+    cmd_dump="mysqldump --defaults-group-suffix=$mysql_group_suffix --compact";
+fi
+
 function mysql_lambda_query {
     $cmd_mysql -D $1 -e "$2;" | sed '1d';
 }
@@ -30,6 +42,11 @@ function checkout_table {
         echo;
         exit;
     fi
+}
+
+function not_recognized {
+    echo Command \`$1\` does not recognized
+    avaliable;
 }
 
 function checkout_specified_database {

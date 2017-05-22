@@ -1,13 +1,8 @@
 #!/bin/bash
 
-# echo 0: $0; echo 1: $1; echo 2: $2; echo 3: $3;
-cmd=`basename $0`
-
 # ==========================
-# Import functions : [ checkout_database , ]
+# Import functions
 source `which mysql_d3_librc`
-# exit
-# ==========================
 
 avaliable_commands_list='help data schema solid all'
 function usage {
@@ -26,16 +21,6 @@ function usage {
 }
 
 checkout_command $@
-
-# cmd pseudo-aliases cause of environment alias incapacity
-if [ -z $mysql_group_suffix ]; then
-    # echo could not extend mysqldump :  \$mysql_group_suffix is null;
-    cmd_mysql="mysql";
-    cmd_dump="mysqldump --compact";
-else
-    cmd_mysql="mysql --defaults-group-suffix=$mysql_group_suffix";
-    cmd_dump="mysqldump --defaults-group-suffix=$mysql_group_suffix --compact";
-fi
 
 if test $1 == 'help'; then
     usage;
@@ -93,5 +78,4 @@ if test $1 == 'schema'; then
     exit;
 fi
 
-echo Command \`$1\` does not recognized
-avaliable;
+not_recognized $1
