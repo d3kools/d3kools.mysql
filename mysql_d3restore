@@ -17,7 +17,7 @@ function usage {
     echo example:
     echo '    '$cmd data mysql Users
     echo '    '$cmd schema mysql Users
-    echo '    '$cmd all wpb
+    echo '    '$cmd truncate wpb
     echo
 }
 
@@ -56,9 +56,11 @@ fi
 
 if test $1 == 'truncate'; then
     checkout_database $@
-    checkout_table $@
     echo 'mysql_d3restore >> truncate'
     exit;
+    for TABLE in $( mysql -D $1 -e "SHOW TABLES;" | sed '1d' ); do
+        mysql -D $1 -e "TRUNCATE $TABLE";
+    done
 fi
 
 not_recognized $1
