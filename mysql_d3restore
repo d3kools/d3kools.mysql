@@ -4,7 +4,7 @@
 # Import functions
 source `which mysql_d3_librc`
 
-avaliable_commands_list='help data schema solid all'
+avaliable_commands_list='help data schema solid all truncate truncatetable truncatedb'
 function usage {
     echo ''
     echo 'Modify data in database'
@@ -29,13 +29,25 @@ if test $1 == 'help'; then
 fi
 
 if test $1 == 'solid'; then
+    # echo '$0:' $0; echo '$1:' $1; echo '$2:' $2; echo '$3:' $3; echo '$4:' $4;
     checkout_database $@
-    echo 'mysql_d3restore >> solid'
+    checkout_folder $@
+    # echo 'mysql_d3restore >> solid'
+    # echo `readlink -f $3`;
+    oldpwd=`pwd`;
+    cd $3;
+    sqlfile=$( ls -1 *.sql | grep -e '--solid' | head -n 1 );
+    echo injecting $sqlfile ...;
+    $cmd_mysql -D $2 < $sqlfile;
+    cd $oldpwd;
+    # mysql -D $2 -e "TRUNCATE $TABLE";
     exit;
 fi
 
 if test $1 == 'all'; then
+    # mysqlimport
     checkout_database $@
+    checkout_folder $@
     echo 'mysql_d3restore >> all'
     exit;
 fi
@@ -56,11 +68,29 @@ fi
 
 if test $1 == 'truncate'; then
     checkout_database $@
-    echo 'mysql_d3restore >> truncate'
-    exit;
-    for TABLE in $( mysql -D $1 -e "SHOW TABLES;" | sed '1d' ); do
-        mysql -D $1 -e "TRUNCATE $TABLE";
+    for TABLE in $( mysql_lambda_query $2 "SHOW TABLES" ); do
+        mysql_lambda_query $2 "TRUNCATE $TABLE";
     done
+    echo All TABLES were truncated
+    exit;
+fi
+
+if test $1 == 'truncatetable'; then
+    checkout_database $@
+    checkout_table $@
+    mysql_lambda_query $2 "TRUNCATE $3";
+    echo TABLE $3 was truncated
+    exit;
+fi
+
+if test $1 == 'truncatedb'; then
+    checkout_database $@
+    for TABLE in $( mysql_lambda_query $2 "SHOW TABLES" ); do
+        mysql_lambda_query $2 "DROP TABLE IF EXISTS $TABLE";
+    done
+    echo All tables droped
+    # mysql -D $1 -e "TRUNCATE $DATABASE";
+    exit;
 fi
 
 not_recognized $1

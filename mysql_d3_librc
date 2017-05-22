@@ -35,6 +35,21 @@ function checkout_database {
         exit;
     fi
 }
+function checkout_folder {
+    if [ -z "$3" ]; then
+        echo 'specify folder:';
+        echo '    '$cmd $1 $2 FOLDER;
+        echo;
+        exit;
+    else
+        if [ -d $3 ]; then
+            echo $1 '->' 'from folder:' $3 '-> to db:' $2
+        else
+            echo 'folder not found : ' $3
+            exit;
+        fi
+    fi
+}
 function checkout_table {
     if [ -z "$3" ]; then
         echo 'specify table:';
@@ -52,4 +67,7 @@ function not_recognized {
 function checkout_specified_database {
     return 2;
 }
+
+# echo '$0:' $0; echo '$1:' $1; echo '$2:' $2; echo '$3:' $3; echo '$4:' $4;
+
 # exit
