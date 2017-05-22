@@ -59,7 +59,7 @@ if test $1 == 'db'; then
     exit;
 fi
 
-if test $1 == 'info'; then
+if test $1 == 'structure'; then
     checkout_database $@
     connection_checkout;
     connection_code=$?;
