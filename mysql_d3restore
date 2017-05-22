@@ -1,35 +1,64 @@
 #!/bin/bash
 
-# database='c2aps1'
+# ==========================
+# Import functions
+source `which mysql_d3_librc`
 
-filename=$database--solid.sql
+avaliable_commands_list='help data schema solid all'
+function usage {
+    echo ''
+    echo 'Modify data in database'
+    echo 'Import data from database__table--type.sql file , wo output'
+    echo ''
+    echo usage:
+    echo '    '$cmd help;
+    echo '    '$cmd all\|solid DATABASE;
+    echo '    '$cmd data\|schema DATABASE [TABLE];
+    echo example:
+    echo '    '$cmd data mysql Users
+    echo '    '$cmd schema mysql Users
+    echo '    '$cmd all wpb
+    echo
+}
 
-if [ -z "$1" ]; then 
-    echo usage: $0 DATABASE;
+checkout_command $@
+
+if test $1 == 'help'; then
+    usage;
     exit;
 fi
-filename=$1
 
-if [ ! -e "$filename" ]; then 
-    echo not found : $filename; exit;
-    # echo DOIT: $0 DATABASE
+if test $1 == 'solid'; then
+    checkout_database $@
+    echo 'mysql_d3restore >> solid'
+    exit;
 fi
 
-for table in $( mysql -D $database -e "SHOW TABLES;" | sed '1d' ); do
-    echo "drop table: " $table
-    mysql -D $database -e "DROP TABLE $table;"
-done
+if test $1 == 'all'; then
+    checkout_database $@
+    echo 'mysql_d3restore >> all'
+    exit;
+fi
 
-echo 'importing solid SQL...'
-mysql $database < $filename
-echo 'done.'
+if test $1 == 'data'; then
+    checkout_database $@
+    checkout_table $@
+    echo 'mysql_d3restore >> data'
+    exit;
+fi
 
-# for sqlfile in $( ls -1 *--schema.sql ); do
-    # echo "sql file: " $sqlfile
-    # mysql $database < $sqlfile
-    # mysql_d3import $i
-    # mysql_d3dump_schema $1 $i
-    # mysql_d3dump_data $1 $i
-# done
+if test $1 == 'schema'; then
+    checkout_database $@
+    checkout_table $@
+    echo 'mysql_d3restore >> schema'
+    exit;
+fi
 
-# echo $filename
+if test $1 == 'truncate'; then
+    checkout_database $@
+    checkout_table $@
+    echo 'mysql_d3restore >> truncate'
+    exit;
+fi
+
+not_recognized $1
