@@ -30,18 +30,25 @@ else
     cmd_mysql="mysql --defaults-group-suffix=$mysql_group_suffix";
 fi
 
+function connection_checkout {
+    # $cmd_mysql -e '\c' 2> /dev/null;
+    $cmd_mysql -e '\c';
+    if [ $? -eq 0 ]; then
+        echo 'Connection : OK'
+        return 0;
+    else
+        echo 'Connection : Fails'
+        return 2;
+    fi
+}
+
 if test $1 == 'help'; then
     usage;
     exit;
 fi
 
 if test $1 == 'check'; then
-    $cmd_mysql -e '\c' 2> /dev/null;
-    if [ $? -eq 0 ]; then
-        echo 'Connection : OK'
-    else
-        echo 'Connection : Fails'
-    fi
+    connection_checkout;
     exit;
 fi
 
@@ -66,17 +73,18 @@ if test $1 == 'info'; then
     checkout_database $@
     COLUMNS_QUERY='SELECT count(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name =';
     TABLE_QUERY='SELECT count(*) FROM';
-
-    exit;
-    function query {
-        mysql -D $2 -e "SHOW TABLES;" | sed '1d'
-    }
-    for TABLE in $( mysql -D $2 -e "SHOW TABLES;" | sed '1d' ); do
+    function query { $cmd_mysql -D $1 -e "$2;" | sed '1d'; }
+    connection_checkout;
+    connection_code=$?;
+    if [ $connection_code -ne 0 ]; then
+        echo "no connection to DB:" $2;
+        exit;
+    fi
+    for TABLE in $( query $2 "SHOW TABLES" ); do
         echo $TABLE "("\
-        $(mysql -D $2 -e "$COLUMNS_QUERY '$TABLE'" | sed "1d")\
+        $(query $2 "$COLUMNS_QUERY '$TABLE'")\
         ") : "\
-        $(mysql -D $2 -e "$TABLE_QUERY $TABLE" | sed "1d")\
-        ;
+        $(query $2 "$TABLE_QUERY $TABLE") ;
     done
     exit;
 fi
