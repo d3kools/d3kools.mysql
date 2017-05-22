@@ -71,20 +71,19 @@ fi
 
 if test $1 == 'info'; then
     checkout_database $@
-    COLUMNS_QUERY='SELECT count(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name =';
-    TABLE_QUERY='SELECT count(*) FROM';
-    function query { $cmd_mysql -D $1 -e "$2;" | sed '1d'; }
     connection_checkout;
     connection_code=$?;
     if [ $connection_code -ne 0 ]; then
         echo "no connection to DB:" $2;
         exit;
     fi
-    for TABLE in $( query $2 "SHOW TABLES" ); do
+    COLUMNS_QUERY='SELECT count(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name =';
+    TABLE_QUERY='SELECT count(*) FROM';
+    for TABLE in $( mysql_lambda_query $2 "SHOW TABLES" ); do
         echo $TABLE "("\
-        $(query $2 "$COLUMNS_QUERY '$TABLE'")\
+        $(mysql_lambda_query $2 "$COLUMNS_QUERY '$TABLE'")\
         ") : "\
-        $(query $2 "$TABLE_QUERY $TABLE") ;
+        $(mysql_lambda_query $2 "$TABLE_QUERY $TABLE") ;
     done
     exit;
 fi

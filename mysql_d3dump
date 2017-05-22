@@ -30,8 +30,10 @@ checkout_command $@
 # cmd pseudo-aliases cause of environment alias incapacity
 if [ -z $mysql_group_suffix ]; then
     # echo could not extend mysqldump :  \$mysql_group_suffix is null;
+    cmd_mysql="mysql";
     cmd_dump="mysqldump --compact";
 else
+    cmd_mysql="mysql --defaults-group-suffix=$mysql_group_suffix";
     cmd_dump="mysqldump --defaults-group-suffix=$mysql_group_suffix --compact";
 fi
 
@@ -56,13 +58,11 @@ if test $1 == 'all'; then
     if [ ! -d $dumpcontainer ]; then
         mkdir $dumpcontainer
     fi
-    exit;
     folder=`date '+%Y%m%d-%H%M%S'`
     mkdir $dumpcontainer/$folder
-
     cd $dumpcontainer/$folder
 
-    for i in $( mysql -D $2 -e "SHOW TABLES;" | sed '1d' ); do
+    for i in $( mysql_lambda_query $2 "SHOW TABLES" ); do
         echo "table: " $i
         mysql_d3dump_schema $2 $i
         mysql_d3dump_data $2 $i
@@ -89,12 +89,7 @@ if test $1 == 'schema'; then
     checkout_table $@
     arguments='--no-data'
     file=$2__$3--schema.sql
-    echo
-    alias -p
-    echo
-    echo $cmd_dump $arguments --result-file=$file $2 $3
-    $cmd_dump $arguments $2 $3
-    echo
+    $cmd_dump $arguments --result-file=$file $2 $3
     exit;
 fi
 
