@@ -60,7 +60,7 @@ function checkout_table {
 }
 
 function not_recognized {
-    echo Command \`$1\` does not recognized
+    echo Command \`$1\` does not recognized;
     avaliable;
 }
 

@@ -9,18 +9,20 @@ Such parametres as server, database, user, password have to be specified via suf
 
 ## Installation
 
-### github clone
+### Github clone installation
 ```bash
 git clone https://github.com/d3kools/d3kools.mysql.git
 cd d3kools.mysql
 sudo ./install.sh
 ```
-### remote
+### Remote installation
 ```bash
-wget -qO- https://raw.githubusercontent.com/d3kools/d3kools.mysql/master/README.md | bash
+wget -qO- https://raw.githubusercontent.com/d3kools/d3kools.mysql/master/install.sh | bash
 ```
 
-### add suffix
+### Configuration
+
+#### mysql suffix
 
 Add database, user, password (and server if needs) in your `~/.my.cnf` to new sections with *xmpl* suffix : [client**xmpl**] and [mysql**xmpl**]
 
@@ -42,6 +44,10 @@ eval `mysql_d3suffix_set`
 ```
 
 this appends two aliases: *mysql* & *mysqldump* with [defaults-group-suffix] (https://dev.mysql.com/doc/refman/5.7/en/option-file-options.html#option_general_defaults-group-suffix) option
+
+#### d3 settings
+**mysql_d3** settings file : `~/.mysql_d3.rc`
+
 
 ## Commands
 * mysql_d3
