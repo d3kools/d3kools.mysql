@@ -49,13 +49,13 @@ if test $1 == 'all'; then
 
     for i in $( mysql_lambda_query $2 "SHOW TABLES" ); do
         echo "table: " $i
-        mysql_d3dump_schema $2 $i
-        mysql_d3dump_data $2 $i
+        mysql_d3dump schema $2 $i
+        mysql_d3dump data $2 $i
     done
 
     mysql_d3info structure $2 | column -t > structure.txt;
 
-    # mysql_d3dump_solid $2
+    # mysql_d3dump solid $2
     cd ../..
 
     exit;
