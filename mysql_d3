@@ -1,3 +1,16 @@
 #!/bin/bash
 
-# mysql_d3
+# ==========================
+# Import functions
+source `which mysql_d3_librc`
+
+avaliable_commands_list='run'
+
+checkout_command $@
+
+if test $1 == 'run'; then
+    $cmd_mysql;
+    exit;
+fi
+
+not_recognized $1
