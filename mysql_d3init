@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# ==========================
+# Import functions
+source `which mysql_d3_librc`
+
+avaliable_commands_list='credentials schema password'
+
+function usage {
+    echo;
+    echo 'creates database + username with local rights';
+    echo;
+    echo usage:;
+    echo '    '$cmd help;
+    echo '    '$cmd init credentials\|schema;
+    echo;
+    echo example:;
+    echo '    '$cmd init schema name;
+    echo;
+    echo '    # creates username:finance and schema:finance_db';
+    echo '    '$cmd init credentials finance;
+    echo;
+}
+
+function generate_password {
+    mysql_lambda_query 'mysql' "SELECT LEFT(MD5(RAND()), 10)";
+}
+
+checkout_command $@
+
+if test $1 == 'help'; then
+    usage;
+    exit;
+fi
+
+if test $1 == 'schema'; then
+    exit;
+fi
+
+if test $1 == 'password'; then
+    password=`generate_password`;
+    echo 'generated :' $password;
+    exit;
+fi
+
+if test $1 == 'credentials'; then
+    checkout_name $@;
+    # echo create $2;
+
+    grants_gl_disabledprivs="'N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N'";
+    grants_gl_enabledprivs="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'";
+    grants_gl_settings="'','','','',0,0,0,0,'',NULL";
+    grants_db_readonly="'Y','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N'";
+    grants_db_minimal="'Y','Y','Y','Y','Y','Y','N','Y','Y','Y','N','Y','N','N','N','N','N','N','N'";
+    grants_db_maximal="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'";
+
+    new_username=$2;
+    new_schemaname=$new_username"_db";
+    password=`generate_password`;
+
+    echo ------------------------;
+    echo username : $new_username;
+    echo password : $password;
+    echo database : $new_schemaname;
+    echo ------------------------;
+    # echo;
+    echo "CREATE DATABASE '$new_schemaname'";
+    to_mysqldb_query "CREATE DATABASE $new_schemaname";
+    # echo;
+    echo "INSERT INTO user VALUES ('localhost' , '$new_username' , '$password' , grants_gl_disabledprivs , grants_gl_settings)";
+    to_mysqldb_query "INSERT INTO user VALUES ('localhost','$new_username',PASSWORD('$password'), $grants_gl_disabledprivs , $grants_gl_settings)";
+    # echo;
+    echo "INSERT INTO db VALUES ('localhost' , '$new_schemaname' , '$new_username' , grants_db_minimal)";
+    to_mysqldb_query "INSERT INTO db VALUES ('localhost' , '$new_schemaname' , '$new_username' , $grants_db_minimal)";
+    # echo;
+    echo ------------------------;
+    echo 'created';
+    exit;
+fi
+
+not_recognized $1
+
