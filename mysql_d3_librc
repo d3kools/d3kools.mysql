@@ -21,6 +21,18 @@ function avaliable {
     echo;
 }
 
+function checkout_connection {
+    # $cmd_mysql -e '\c' 2> /dev/null;
+    $cmd_mysql -e '\c';
+    if [ $? -eq 0 ]; then
+        echo 'Connection : OK'
+        return 0;
+    else
+        echo 'Connection : Fails'
+        return 2;
+    fi
+}
+
 function checkout_command {
     if [ -z "$1" ]; then
         avaliable;
