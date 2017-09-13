@@ -14,23 +14,11 @@ function usage {
     echo '    '$cmd help;
     echo '    '$cmd info\|next DATABASE;
     echo example:;
-    echo '    '$cmd into wpb;
+    echo '    '$cmd info wpb_schema;
     echo;
 }
 
 checkout_command $@
-
-function connection_checkout {
-    # $cmd_mysql -e '\c' 2> /dev/null;
-    $cmd_mysql -e '\c';
-    if [ $? -eq 0 ]; then
-        echo 'Connection : OK'
-        return 0;
-    else
-        echo 'Connection : Fails'
-        return 2;
-    fi
-}
 
 if test $1 == 'help'; then
     usage;
@@ -38,7 +26,7 @@ if test $1 == 'help'; then
 fi
 
 if test $1 == 'check'; then
-    connection_checkout;
+    checkout_connection;
     exit;
 fi
 
@@ -61,7 +49,7 @@ fi
 
 if test $1 == 'structure'; then
     checkout_database $@
-    connection_checkout;
+    checkout_connection;
     connection_code=$?;
     if [ $connection_code -ne 0 ]; then
         echo "no connection to DB:" $2;
