@@ -1,2 +1,0 @@
-#!/bin/bash
-echo export mysql_group_suffix=$1

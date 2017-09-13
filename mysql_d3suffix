@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# ==========================
+# Import functions
+source `which mysql_d3_librc`
+
+avaliable_commands_list='set list clear'
+
+function usage {
+    echo;
+    echo 'Sugar mysql & mysqldump tool';
+    echo;
+    echo usage:;
+    echo '    '$cmd help;
+    echo '    '$cmd list;
+    echo '    `'$cmd set\|clear'`';
+    echo example:;
+    echo '    `'$cmd set aps1'`';
+    echo '    `'$cmd clear'`';
+    echo '    '$cmd list;
+    echo;
+}
+
+checkout_command $@
+
+if test $1 == 'help'; then
+    usage;
+    exit;
+fi
+
+if test $1 == 'list'; then
+    mycnf=~/.my.cnf;
+    if [ -f $mycnf ]; then
+        # client..*\
+        cat $mycnf | grep -e "\[client.*\]" | sed -e "s/^\[client/-/" -e "s/\]//";
+    else
+        echo $mycnf not found;
+    fi
+    exit;
+fi
+
+if test $1 == 'set'; then
+    echo export mysql_group_suffix=$2;
+    exit;
+fi
+
+if test $1 == 'clear'; then
+    echo unset mysql_group_suffix;
+    exit;
+fi
+
+not_recognized $1
+
