@@ -7,6 +7,9 @@ Simple workout with single database.
 No user, server and password parametres.
 Such parametres as server, database, user, password have to be specified via suffix sintax.
 
+
+
+----------
 ## Installation
 
 ### Github clone installation
@@ -52,6 +55,7 @@ this appends two aliases: *mysql* & *mysqldump* with [defaults-group-suffix] (ht
 
 **mysql_d3** settings file : `~/.mysql_d3.rc`
 
+----------
 ## Commands
 * mysql_d3
 * mysql_d3info
@@ -65,9 +69,17 @@ this appends two aliases: *mysql* & *mysqldump* with [defaults-group-suffix] (ht
 
 ### mysql_d3info
 
-usage: `mysql_d3info DATABASE`
+usage: `mysql_d3info WHAT [DATABASE]`
+
+avaliable : help structure db check credentials
 
 ```$TABLE (count(COLUMN_NAME)) : count(*) $TABLE```
+
+#### mysql_d3info db
+
+#### mysql_d3info structure
+
+usage: `mysql_d3credentials`
 
 #### mysql_d3info credentials
 
@@ -143,9 +155,23 @@ usage: `mysql_d3dump schema DATABASE TABLE`
 
 ### mysql_d3suffix
 
+#### mysql_d3suffix list
+
+read all your suffixes from **$HOME/.my.cnf**
+```bash
+$ mysql_d3suffix list
+-
+-root
+-est
+-pub
+-imb
+```
+
 #### mysql_d3suffix set
 
-##### description
+```
+`mysql_d3suffix set aps1`
+```
 
 sets aliases for mysql and mysqldump:
 
@@ -157,32 +183,32 @@ sets aliases for mysql and mysqldump:
 
 suffix value is taken from environment variable *$mysql_group_suffix*
 
-##### script variant
-
-run:
-
+**script variant**
 ```bash
 $ export mysql_group_suffix=suffix
-$ eval `mysql_d3suffix_set`
+$ eval `mysql_d3suffix set`
 ```
 
-##### one line variant
-
+**one line variant**
 ```bash
-$ mysql_d3suffix set suffix
+$ `mysql_d3suffix set suffix`
 ```
 
-##### .my.cnf
-
+**.my.cnf**
 now your `~/.my.cnf` may be extended with
 
 ```ini
-[clientsuffix]
 ...
+; -suffix
+[clientsuffix]
+user=user
+password=password
 [mysqlsuffix]
+database=database
 ...
 ```
 
+----------
 ### Stuff
 
 #### Chmod checkout
