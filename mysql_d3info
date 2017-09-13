@@ -31,12 +31,11 @@ if test $1 == 'check'; then
 fi
 
 if test $1 == 'credentials'; then
-    function query { $cmd_mysql -D mysql -e "$1"; };
-    query "SELECT Host,User,Password FROM user";
-    query "SELECT Host,Db,User FROM db";
-    query "SELECT * FROM servers";
-    query "SELECT Host,Db FROM host";
-    query "SELECT Host,Db,User,Table_name FROM tables_priv";
+    to_mysqldb_query "SELECT Host,User,Password FROM user";
+    to_mysqldb_query "SELECT Host,Db,User FROM db";
+    to_mysqldb_query "SELECT * FROM servers";
+    to_mysqldb_query "SELECT Host,Db FROM host";
+    to_mysqldb_query "SELECT Host,Db,User,Table_name FROM tables_priv";
     exit;
 fi
 
