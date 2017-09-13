@@ -4,7 +4,7 @@
 # Import functions
 source `which mysql_d3_librc`
 
-avaliable_commands_list='help data schema solid all truncate truncatetable truncatedb'
+avaliable_commands_list='help data schema solid all truncate truncatetable drop'
 function usage {
     echo ''
     echo 'Modify data in database'

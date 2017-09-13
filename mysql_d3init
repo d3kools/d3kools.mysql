@@ -4,7 +4,7 @@
 # Import functions
 source `which mysql_d3_librc`
 
-avaliable_commands_list='credentials schema password'
+avaliable_commands_list='help credentials schema password'
 
 function usage {
     echo;

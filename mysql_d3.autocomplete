@@ -4,7 +4,7 @@ _script_d3() {
     local cur opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
-    opts="info dump restore"
+    opts="run info dump restore"
     COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
     return 0
 }
@@ -13,6 +13,14 @@ _script_d3info() {
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     opts="help structure db check credentials"
+    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    return 0
+}
+_script_d3init() {
+    local cur opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    opts="help credentials schema password"
     COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
     return 0
 }
@@ -28,12 +36,22 @@ _script_d3restore() {
     local cur opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
-    opts="help data schema solid all truncate drop"
+    opts="help data schema solid all truncate truncatetable drop"
+    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    return 0
+}
+_script_d3suffix() {
+    local cur opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    opts="help set list check clear"
     COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
     return 0
 }
 
 complete -o nospace -F _script_d3 mysql_d3
 complete -o nospace -F _script_d3info mysql_d3info
+complete -o nospace -F _script_d3init mysql_d3init
 complete -o nospace -F _script_d3dump mysql_d3dump
 complete -o nospace -F _script_d3restore mysql_d3restore
+complete -o nospace -F _script_d3suffix mysql_d3suffix
