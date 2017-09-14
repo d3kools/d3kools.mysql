@@ -3,16 +3,34 @@
 proj=mysqld3kools
 basedir=$(readlink -f $(dirname $0))
 
+prefix=/usr/local
+
 if !(test -z $1); then
+    if [ $1 = 'help' ]; then
+        echo help;
+        exit;
+    fi
     if [ $1 = 'relative' ]; then
         echo relat;
-    else
-        echo uknown
+        exit;
     fi
+    echo uknown parameter : $1
+    exit;
 fi
 
-function usrlocal_install {
-    usrlocal=/usr/local/$proj
+function checkout_prefixpath_permission {
+    if ! test -d $prefix; then
+        echo "$prefix not found"
+        exit;
+    fi
+    if ! test -w $prefix; then
+        echo "you do not have write permission to $prefix"
+        exit;
+    fi
+}
+
+function prefixpath_install {
+    usrlocal=$prefix/$proj
     if test -d $usrlocal; then
         echo $usrlocal already exists;
         exit;
@@ -36,7 +54,9 @@ function homerc_install {
     chmod 640 $rcfile
 }
 
-usrlocal_install
+checkout_prefixpath_permission
+prefixpath_install
 homerc_install
+
 echo $proj installed
 # mkdir $usrlocal
