@@ -34,7 +34,7 @@ if test $1 == 'solid'; then
     sqlfile=$2--solid.sql;
     if [ -f $sqlfile ]; then
         echo injecting $sqlfile ...;
-        $cmd_mysql -D $2 < $sqlfile;
+        $cmd_import -D $2 < $sqlfile;
     else
         echo error: $sqlfile not found;
     fi
@@ -72,7 +72,7 @@ if test $1 == 'data'; then
     sqlfile=$2__$3--data.sql;
     if [ -f $sqlfile ]; then
         echo injecting $sqlfile ...;
-        $cmd_mysql -D $2 < $sqlfile;
+        $cmd_import -D $2 < $sqlfile;
     else
         echo error: $sqlfile not found;
     fi
@@ -85,7 +85,7 @@ if test $1 == 'schema'; then
     sqlfile=$2__$3--schema.sql;
     if [ -f $sqlfile ]; then
         echo injecting $sqlfile ...;
-        $cmd_mysql -D $2 < $sqlfile;
+        $cmd_import -D $2 < $sqlfile;
     else
         echo error: $sqlfile not found;
     fi

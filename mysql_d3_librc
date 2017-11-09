@@ -6,9 +6,12 @@ cmd=`basename $0`
 if [ -z $mysql_group_suffix ]; then
     # echo could not extend mysqldump :  \$mysql_group_suffix is null;
     cmd_mysql="mysql";
+    cmd_import="mysql";
+    # --skip-quote-names ?
     cmd_dump="mysqldump --compact";
 else
     cmd_mysql="mysql --defaults-group-suffix=$mysql_group_suffix";
+    cmd_import="mysql --defaults-group-suffix=$mysql_group_suffix";
     cmd_dump="mysqldump --defaults-group-suffix=$mysql_group_suffix --compact";
     # mysqldump flags
     # --skip-opt
