@@ -27,6 +27,18 @@ function mysql_lambdaquery_showtables {
 function mysql_lambdaquery_write {
     $cmd_mysql -D $1 -e "SET foreign_key_checks=0; $2;" | sed '1d';
 }
+function mysql_import {
+    # $1 - db name
+    # $2 - $sqlfile
+    if [ -f $sqlfile ]; then
+        echo injecting $sqlfile ...;
+        # disabled cause of foreign key order
+        # $cmd_import -D $2 < $sqlfile;
+        $cmd_import -D $1 -e "SET foreign_key_checks=0; source $2;";
+    else
+        echo error: $sqlfile not found;
+    fi
+}
 function to_mysqldb_query {
     $cmd_mysql -D 'mysql' -e "$1";
 }

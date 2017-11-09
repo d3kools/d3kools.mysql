@@ -31,13 +31,7 @@ if test $1 == 'solid'; then
     # checkout_folder $@
     # sqlfile=$( ls -1 *.sql | grep -e '--solid.sql' | head -n 1 );
     # cd $3;
-    sqlfile=$2--solid.sql;
-    if [ -f $sqlfile ]; then
-        echo injecting $sqlfile ...;
-        $cmd_import -D $2 < $sqlfile;
-    else
-        echo error: $sqlfile not found;
-    fi
+    mysql_import "$2" "$2--solid.sql";
     cd $oldpwd;
     exit;
 fi
@@ -50,12 +44,14 @@ if test $1 == 'all'; then
     mysql_d3restore drop $2;
     echo;
     for f in $( ls -1 $2__*--schema.sql ); do
+        # extract table name
         f=${f%--schema.sql};
         f=${f#$2__};
         mysql_d3restore schema $2 $f;
     done
     echo;
     for f in $( ls -1 $2__*--data.sql ); do
+        # extract table name
         f=${f%--data.sql};
         f=${f#$2__};
         mysql_d3restore data $2 $f;
@@ -69,26 +65,14 @@ fi
 if test $1 == 'data'; then
     checkout_database $@
     checkout_table $@
-    sqlfile=$2__$3--data.sql;
-    if [ -f $sqlfile ]; then
-        echo injecting $sqlfile ...;
-        $cmd_import -D $2 < $sqlfile;
-    else
-        echo error: $sqlfile not found;
-    fi
+    mysql_import "$2" "$2__$3--data.sql";
     exit;
 fi
 
 if test $1 == 'schema'; then
     checkout_database $@
     checkout_table $@
-    sqlfile=$2__$3--schema.sql;
-    if [ -f $sqlfile ]; then
-        echo injecting $sqlfile ...;
-        $cmd_import -D $2 < $sqlfile;
-    else
-        echo error: $sqlfile not found;
-    fi
+    mysql_import "$2" "$2__$3--schema.sql";
     exit;
 fi
 
