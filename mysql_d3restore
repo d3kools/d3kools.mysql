@@ -57,7 +57,9 @@ if test $1 == 'all'; then
         mysql_d3restore data $2 $f;
     done
     echo;
-    mysql_d3info structure $2 | column -t;
+    if [ `which column` ]; then
+        mysql_d3info structure $2 | column -t;
+    fi
     cd $oldpwd;
     exit;
 fi

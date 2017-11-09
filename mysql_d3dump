@@ -49,7 +49,11 @@ if test $1 == 'all'; then
         mysql_d3dump data $2 $i
     done
 
-    mysql_d3info structure $2 | column -t > structure.txt;
+    if [ `which column` ]; then
+        mysql_d3info structure $2 | column -t > structure.txt;
+    else
+        # @TODO: column analog
+    fi
 
     # mysql_d3dump solid $2
     cd ../..
