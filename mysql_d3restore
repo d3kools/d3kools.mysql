@@ -22,12 +22,9 @@ function usage {
 }
 
 checkout_command $@
-oldpwd=`pwd`;
+show_help $1
 
-if test $1 == 'help'; then
-    usage;
-    exit;
-fi
+oldpwd=`pwd`;
 
 if test $1 == 'solid'; then
     checkout_database $@

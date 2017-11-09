@@ -10,6 +10,9 @@ if [ -z $mysql_group_suffix ]; then
 else
     cmd_mysql="mysql --defaults-group-suffix=$mysql_group_suffix";
     cmd_dump="mysqldump --defaults-group-suffix=$mysql_group_suffix --compact";
+    # mysqldump flags
+    # --skip-opt
+    # --compact
 fi
 
 function mysql_lambda_query {
@@ -24,17 +27,42 @@ function avaliable {
     echo "Avaliable commands : $avaliable_commands_list";
     echo;
 }
+function show_help {
+    if [ "$1" == 'help' ]; then
+        usage;
+        exit;
+    fi
+}
 
 function checkout_connection {
-    # $cmd_mysql -e '\c' 2> /dev/null;
     $cmd_mysql -e '\c';
-    if [ $? -eq 0 ]; then
-        echo 'Connection : OK'
-        return 0;
+    connection_code=$?;
+    # if [ $? -eq 0 ]; then
+        # connection_code=0;
+    # else
+        # connection_code=2;
+    # fi
+    if [ -z "$1" ]; then
+        # silent mode
+        if [ $connection_code -ne 0 ]; then
+            exit;
+        fi
     else
-        echo 'Connection : Fails'
-        return 2;
+        # print mode
+        if test $1 == 'out'; then
+            if [ $connection_code -ne 0 ]; then
+                # echo "no connection to DB:" $2;
+                echo 'Connection : Fails';
+            else
+                echo 'Connection : OK';
+            fi
+            return;
+        else
+            echo 'unknown cmd';
+        fi
+        exit;
     fi
+    # connection_code=$?;
 }
 
 function checkout_command {

@@ -19,14 +19,10 @@ function usage {
 }
 
 checkout_command $@
-
-if test $1 == 'help'; then
-    usage;
-    exit;
-fi
+show_help $1
 
 if test $1 == 'check'; then
-    checkout_connection;
+    checkout_connection out;
     exit;
 fi
 
@@ -49,11 +45,6 @@ fi
 if test $1 == 'structure'; then
     checkout_database $@
     checkout_connection;
-    connection_code=$?;
-    if [ $connection_code -ne 0 ]; then
-        echo "no connection to DB:" $2;
-        exit;
-    fi
     COLUMNS_QUERY='SELECT count(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name =';
     TABLE_QUERY='SELECT count(*) FROM';
     for TABLE in $( mysql_lambda_query $2 "SHOW TABLES" ); do

@@ -21,11 +21,7 @@ function usage {
 }
 
 checkout_command $@
-
-if test $1 == 'help'; then
-    usage;
-    exit;
-fi
+show_help $1
 
 if test $1 == 'solid'; then
     checkout_database $@
