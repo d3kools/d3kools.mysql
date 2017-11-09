@@ -94,21 +94,16 @@ fi
 
 if test $1 == 'truncate'; then
     checkout_database $@
-    for TABLE in $( mysql_lambdaquery_showtables $2 ); do
-        mysql_lambdaquery_write $2 "TRUNCATE $TABLE";
-    done
-    echo All TABLES were truncated
-    exit;
-fi
-
-if test $1 == 'truncatetable'; then
-    echo todo : join with truncate
-    exit;
-    # DEPRECATED
-    checkout_database $@
-    checkout_table $@
-    mysql_lambdaquery_write $2 "TRUNCATE $3";
-    echo TABLE $3 was truncated
+    # checkout_table $@
+    if [ -z "$3" ]; then
+        for TABLE in $( mysql_lambdaquery_showtables $2 ); do
+            mysql_lambdaquery_write $2 "TRUNCATE $TABLE";
+        done
+        echo All TABLES were truncated;
+    else
+        mysql_lambdaquery_write $2 "TRUNCATE $3";
+        echo TABLE $3 was truncated;
+    fi
     exit;
 fi
 
