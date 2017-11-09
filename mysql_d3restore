@@ -94,8 +94,8 @@ fi
 
 if test $1 == 'truncate'; then
     checkout_database $@
-    for TABLE in $( mysql_lambda_query $2 "SHOW TABLES" ); do
-        mysql_lambda_query $2 "TRUNCATE $TABLE";
+    for TABLE in $( mysql_lambdaquery_showtables $2 ); do
+        mysql_lambdaquery_write $2 "TRUNCATE $TABLE";
     done
     echo All TABLES were truncated
     exit;
@@ -107,15 +107,15 @@ if test $1 == 'truncatetable'; then
     # DEPRECATED
     checkout_database $@
     checkout_table $@
-    mysql_lambda_query $2 "TRUNCATE $3";
+    mysql_lambdaquery_write $2 "TRUNCATE $3";
     echo TABLE $3 was truncated
     exit;
 fi
 
 if test $1 == 'drop'; then
     checkout_database $@
-    for TABLE in $( mysql_lambda_query $2 "SHOW TABLES" ); do
-        mysql_lambda_query $2 "DROP TABLE IF EXISTS $TABLE";
+    for TABLE in $( mysql_lambdaquery_showtables $2 ); do
+        mysql_lambdaquery_write $2 "DROP TABLE IF EXISTS $TABLE";
     done
     echo All tables droped
     # mysql -D $1 -e "TRUNCATE $DATABASE";

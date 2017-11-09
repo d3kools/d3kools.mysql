@@ -47,11 +47,11 @@ if test $1 == 'structure'; then
     checkout_connection;
     COLUMNS_QUERY='SELECT count(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name =';
     TABLE_QUERY='SELECT count(*) FROM';
-    for TABLE in $( mysql_lambda_query $2 "SHOW TABLES" ); do
+    for TABLE in $( mysql_lambdaquery_showtables $2 ); do
         echo $TABLE "("\
-        $(mysql_lambda_query $2 "$COLUMNS_QUERY '$TABLE'")\
+        $(mysql_lambdaquery_read $2 "$COLUMNS_QUERY '$TABLE'")\
         ") : "\
-        $(mysql_lambda_query $2 "$TABLE_QUERY $TABLE") ;
+        $(mysql_lambdaquery_read $2 "$TABLE_QUERY $TABLE") ;
     done
     exit;
 fi

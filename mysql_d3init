@@ -23,7 +23,7 @@ function usage {
 }
 
 function generate_password {
-    mysql_lambda_query 'mysql' "SELECT LEFT(MD5(RAND()), 10)";
+    mysql_lambdaquery_read 'mysql' "SELECT LEFT(MD5(RAND()), 10)";
 }
 
 checkout_command $@

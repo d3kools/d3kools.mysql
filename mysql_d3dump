@@ -43,7 +43,7 @@ if test $1 == 'all'; then
     mkdir $dumpcontainer/$folder
     cd $dumpcontainer/$folder
 
-    for i in $( mysql_lambda_query $2 "SHOW TABLES" ); do
+    for i in $( mysql_lambdaquery_showtables $2 ); do
         echo "table: " $i
         mysql_d3dump schema $2 $i
         mysql_d3dump data $2 $i

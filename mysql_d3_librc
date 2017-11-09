@@ -18,9 +18,14 @@ else
     # --compact
 fi
 
-function mysql_lambda_query {
+function mysql_lambdaquery_read {
     $cmd_mysql -D $1 -e "$2;" | sed '1d';
-    # echo $cmd_mysql -D $1 -e "$2;";
+}
+function mysql_lambdaquery_showtables {
+    $cmd_mysql -D $1 -e "SHOW TABLES;" | sed '1d';
+}
+function mysql_lambdaquery_write {
+    $cmd_mysql -D $1 -e "SET foreign_key_checks=0; $2;" | sed '1d';
 }
 function to_mysqldb_query {
     $cmd_mysql -D 'mysql' -e "$1";
