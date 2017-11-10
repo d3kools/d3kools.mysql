@@ -52,6 +52,7 @@ if test $1 == 'all'; then
     if [ `which column` ]; then
         mysql_d3info structure $2 | column -t > structure.txt;
     else
+        mysql_d3info structure $2 > structure.txt;
         # @TODO: column analog
     fi
 

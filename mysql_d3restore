@@ -59,6 +59,8 @@ if test $1 == 'all'; then
     echo;
     if [ `which column` ]; then
         mysql_d3info structure $2 | column -t;
+    else
+        mysql_d3info structure $2;
     fi
     cd $oldpwd;
     exit;
