@@ -1,10 +1,10 @@
 # mysql_d3.autocomplete
 
-_script_d3() {
+_script_d3_root() {
     local cur opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
-    opts="run info dump restore"
+    opts="run-cli suffix-list suffix-set suffix-check suffix-clear dump-solid dump-all dump-data dump-schema restore-solid restore-all restore-data restore-schema restore-one drop-db truncate-db truncate-table info-check info-credentials info-structure init-credentials"
     COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
     return 0
 }
@@ -49,7 +49,7 @@ _script_d3suffix() {
     return 0
 }
 
-complete -o nospace -F _script_d3 mysql_d3
+complete -o nospace -F _script_d3_root mysql_d3
 complete -o nospace -F _script_d3info mysql_d3info
 complete -o nospace -F _script_d3init mysql_d3init
 complete -o nospace -F _script_d3dump mysql_d3dump
