@@ -22,10 +22,6 @@ function usage {
     echo;
 }
 
-function generate_password {
-    mysql_lambdaquery_read 'mysql' "SELECT LEFT(MD5(RAND()), 10)";
-}
-
 checkout_command $@
 show_help $1
 
@@ -43,12 +39,12 @@ if test $1 == 'credentials'; then
     checkout_name $@;
     # echo create $2;
 
-    grants_gl_disabledprivs="'N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N'";
-    grants_gl_enabledprivs="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'";
-    grants_gl_settings="'','','','',0,0,0,0,'',NULL";
-    grants_db_readonly="'Y','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N'";
-    grants_db_minimal="'Y','Y','Y','Y','Y','Y','N','Y','Y','Y','N','Y','N','N','N','N','N','N','N'";
-    grants_db_maximal="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'";
+    local grants_gl_disabledprivs="'N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N'";
+    local grants_gl_enabledprivs="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'";
+    local grants_gl_settings="'','','','',0,0,0,0,'',NULL";
+    local grants_db_readonly="'Y','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N'";
+    local grants_db_minimal="'Y','Y','Y','Y','Y','Y','N','Y','Y','Y','N','Y','N','N','N','N','N','N','N'";
+    local grants_db_maximal="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'";
 
     new_username=$2;
     new_schemaname=$new_username"_db";
