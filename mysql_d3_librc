@@ -21,41 +21,59 @@ fi
 function mysql_lambdaquery_read {
     $cmd_mysql -D $1 -e "$2;" | sed '1d';
 }
-function mysql_lambdaquery_showtables {
-    $cmd_mysql -D $1 -e "SHOW TABLES;" | sed '1d';
-}
 function mysql_lambdaquery_write {
     $cmd_mysql -D $1 -e "SET foreign_key_checks=0; $2;" | sed '1d';
+}
+function mysql_lambdaquery_showtables {
+    $cmd_mysql -D $1 -e "SHOW TABLES;" | sed '1d';
 }
 function mysql_import {
     # $1 - db name
     # $2 - $sqlfile
-    if [ -f $sqlfile ]; then
-        echo injecting $sqlfile ...;
-        # disabled cause of foreign key order
-        # $cmd_import -D $2 < $sqlfile;
-        $cmd_import -D $1 -e "SET foreign_key_checks=0; source $2;";
+    if [ -f "$2" ]; then
+        echo injecting $2 ...
+        # $cmd_import -D $1 < $2; #old
+        $cmd_import -D $1 -e "`mysql_unset_local_variables $2`"
     else
-        echo error: $sqlfile not found;
+        echo error: $2 not found
     fi
 }
 function to_mysqldb_query {
     $cmd_mysql -D 'mysql' -e "$1";
 }
 
-function mysql_dump_headers {
+function mysql_unset_local_variables {
+    local cmtrline;
     # mysql_dump_headers START
-    # /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-    # /*!40103 SET TIME_ZONE='+00:00' */;
-    # /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-    # /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-    # /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+    _mysql_dump_headers_before() {
+        local msvar_save_time_zone="SET @OLD_TIME_ZONE=@@TIME_ZONE, TIME_ZONE='+00:00'"
+        local msvar_save_unique_checks="SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0"
+        local msvar_save_foreign_key_checks="SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0"
+        local msvar_save_sql_mode="SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO'"
+        echo -n "$msvar_save_time_zone; $msvar_save_unique_checks; $msvar_save_foreign_key_checks; $msvar_save_sql_mode;"
+        # /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+        # /*!40103 SET TIME_ZONE='+00:00' */;
+        # /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+        # /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+        # /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+    }
     # mysql_dump_headers BODY
-    # /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-    # /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-    # /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-    # /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
-    # mysql_dump_headers EOF
+    _mysql_dump_headers_after() {
+        local msvar_restore_sql_mode="SET SQL_MODE=@OLD_SQL_MODE"
+        local msvar_restore_foreign_key_checks="SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS"
+        local msvar_restore_unique_checks="SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS"
+        local msvar_restore_time_zone="SET TIME_ZONE=@OLD_TIME_ZONE"
+        echo -n "$msvar_restore_sql_mode; $msvar_restore_foreign_key_checks; $msvar_restore_unique_checks; $msvar_restore_time_zone;"
+        # /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+        # /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+        # /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+        # /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+    }
+
+    # echo -n "SET foreign_key_checks=0; source" $1\; #old
+    echo -n `_mysql_dump_headers_before` source $1\; `_mysql_dump_headers_after`
+    unset -f _mysql_dump_headers_before
+    unset -f _mysql_dump_headers_after
     return;
 }
 
