@@ -1,47 +1,80 @@
 #!/bin/bash
 
 cmd=`basename $0`
+if [ -z $1 ]; then
+    commandlet=''
+else
+    commandlet=`basename $1`
+fi
+dumpcontainer='mysqldump_'
+fileconfig="$HOME/.my.cnf"
+if [ ! -f $fileconfig ]; then
+    echo $fileconfig not found;
+    exit;
+fi
+
+oldpwd=`pwd`
 
 # cmd pseudo-aliases cause of environment alias incapacity
 if [ -z $mysql_group_suffix ]; then
     # echo could not extend mysqldump :  \$mysql_group_suffix is null;
-    cmd_mysql="mysql";
-    cmd_import="mysql";
+    cmd_mysql="mysql"
+    cmd_import="mysql"
     # --skip-quote-names ?
-    cmd_dump="mysqldump --compact";
+    cmd_dump="mysqldump --compact"
 else
-    cmd_mysql="mysql --defaults-group-suffix=$mysql_group_suffix";
-    cmd_import="mysql --defaults-group-suffix=$mysql_group_suffix";
-    cmd_dump="mysqldump --defaults-group-suffix=$mysql_group_suffix --compact";
+    cmd_mysql="mysql --defaults-group-suffix=$mysql_group_suffix"
+    cmd_import="mysql --defaults-group-suffix=$mysql_group_suffix"
+    cmd_dump="mysqldump --defaults-group-suffix=$mysql_group_suffix --compact"
     # mysqldump flags
     # --skip-opt
     # --compact
 fi
 
+# single database specified with [mysql] in ~/.my.cnf use
+function get_config_variable {
+    local config_section=$1
+    local config_varname=$2
+    local sedsection="\[$config_section$mysql_group_suffix\]"
+    local sedregex="/^$sedsection/ { :l /^$config_varname[ ]*=/ { s/.*=[ ]*//; p; q;}; n; b l;}"
+    local parsed_value=`cat $fileconfig | sed 's/\r//' | sed -nr "$sedregex"`
+    echo -e ${parsed_value}
+    # echo -e ${parsed_value::-1} #crlf old remove
+}
+
+DB=`get_config_variable mysql database`
+user=`get_config_variable client user`
+
 function mysql_lambdaquery_read {
     $cmd_mysql -D $1 -e "$2;" | sed '1d';
 }
 function mysql_lambdaquery_write {
-    $cmd_mysql -D $1 -e "SET foreign_key_checks=0; $2;" | sed '1d';
+    $cmd_mysql -D $DB -e "SET foreign_key_checks=0; $1;" | sed '1d'
 }
 function mysql_lambdaquery_showtables {
-    $cmd_mysql -D $1 -e "SHOW TABLES;" | sed '1d';
+    $cmd_mysql -D $DB -e "SHOW TABLES;" | sed '1d';
 }
 function mysql_import {
-    # $1 - db name
-    # $2 - $sqlfile
-    if [ -f "$2" ]; then
-        echo injecting $2 ...
-        # $cmd_import -D $1 < $2; #old
-        $cmd_import -D $1 -e "`mysql_unset_local_variables $2`"
+    # $1 - $sqlfile
+    if [ -f "$1" ]; then
+        echo injecting $1 ...
+        # $cmd_import -D $1 < $1; #old
+        $cmd_import -D $DB -e "`mysql_unset_local_variables $1`"
     else
-        echo error: $2 not found
+        echo error: $1 not found
     fi
 }
 function to_mysqldb_query {
     $cmd_mysql -D 'mysql' -e "$1";
 }
-
+function get_sql_filename {
+    # check table argument
+    if [ -z $2 ]; then
+        echo $DB--$1.sql
+    else
+        echo $DB\_\_$2--$1.sql
+    fi
+}
 function mysql_unset_local_variables {
     local cmtrline;
     # mysql_dump_headers START
@@ -83,7 +116,7 @@ function avaliable {
     echo;
 }
 function show_help {
-    if [ "$1" == 'help' ]; then
+    if [ "$commandlet" == 'help' ]; then
         usage;
         exit;
     fi
@@ -91,7 +124,7 @@ function show_help {
 
 function checkout_connection {
     $cmd_mysql -e '\c';
-    connection_code=$?;
+    local connection_code=$?;
     # if [ $? -eq 0 ]; then
         # connection_code=0;
     # else
@@ -104,7 +137,7 @@ function checkout_connection {
         fi
     else
         # print mode
-        if test $1 == 'out'; then
+        if [[ $1 == 'out' ]]; then
             if [ $connection_code -ne 0 ]; then
                 # echo "no connection to DB:" $2;
                 echo 'Connection : Fails';
@@ -113,7 +146,7 @@ function checkout_connection {
             fi
             return;
         else
-            echo 'unknown cmd';
+            echo 'unknown mode';
         fi
         exit;
     fi
@@ -121,17 +154,18 @@ function checkout_connection {
 }
 
 function checkout_command {
-    if [ -z "$1" ]; then
+    if [ -z "$ commandlet" ]; then
         avaliable;
         exit;
     fi
 }
 function checkout_database {
-    if [ -z "$2" ]; then
-        echo 'specify database:';
-        echo '    '$cmd $1 DATABASE;
-        echo;
+    if [ -z "$DB" ]; then
+        echo "specify database with [mysql] section in $fileconfig"
+        echo
         exit;
+    else
+        dumpcontainer=$dumpcontainer$DB
     fi
 }
 function checkout_name {
@@ -173,9 +207,9 @@ function checkout_folder {
     fi
 }
 function checkout_table {
-    if [ -z "$3" ]; then
+    if [ -z "$1" ]; then
         echo 'specify table:';
-        echo '    '$cmd $1 DATABASE TABLE;
+        echo '    '$cmd $commandlet TABLE;
         echo;
         exit;
     fi
@@ -193,6 +227,55 @@ function checkout_specified_database {
 # init
 function generate_password {
     mysql_lambdaquery_read 'mysql' "SELECT LEFT(MD5(RAND()), 10)";
+}
+
+function commandlet_dump_solid {
+    local file=`get_sql_filename solid`
+    $cmd_dump --result-file=$file $DB
+    echo dump solid \: $file
+}
+function commandlet_dump_data {
+    local arguments='--no-create-info --skip-extended-insert'
+    local file=`get_sql_filename data $1`
+    $cmd_dump $arguments --result-file=$file $DB $1
+    echo dump data \: $1 [$file]
+}
+function commandlet_dump_schema {
+    local arguments='--no-data'
+    local file=`get_sql_filename schema $1`
+    $cmd_dump $arguments --result-file=$file $DB $1
+    echo dump schema \: $1 [$file]
+}
+function commandlet_restore_schema {
+    local arguments='--no-data'
+    local file=`get_sql_filename schema $1`
+    mysql_import "$file"
+    echo restore schema \: $1 [$file]
+}
+function commandlet_drop_table {
+    mysql_lambdaquery_write "DROP TABLE IF EXISTS $1"
+    echo TABLE $1 was droped
+}
+function commandlet_truncate_table {
+    mysql_lambdaquery_write "TRUNCATE $1"
+    echo TABLE $1 was truncated
+}
+function commandlet_info_structure_func {
+    local COLUMNS_QUERY='SELECT count(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name ='
+    local TABLE_QUERY='SELECT count(*) FROM'
+    for TABLE in $( mysql_lambdaquery_showtables ); do
+        echo $TABLE "("\
+        $(mysql_lambdaquery_read $DB "$COLUMNS_QUERY '$TABLE'")\
+        ") : "\
+        $(mysql_lambdaquery_read $DB "$TABLE_QUERY $TABLE");
+    done
+}
+function commandlet_info_structure_print {
+    if [ `which column` ]; then
+        commandlet_info_structure_func | column -t;
+    else
+        commandlet_info_structure_func;
+    fi
 }
 
 # echo '$0:' $0; echo '$1:' $1; echo '$2:' $2; echo '$3:' $3; echo '$4:' $4;
