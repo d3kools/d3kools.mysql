@@ -21,7 +21,40 @@ function usage {
     echo '    '$cmd all wpb
     echo '    '$cmd truncate wpb
     echo
+    echo 'Sugar mysql & mysqldump tool';
+    echo;
+    echo usage:;
+    echo '    '$cmd help;
+    echo '    '$cmd info\|next DATABASE;
+    echo example:;
+    echo '    '$cmd info wpb_schema;
+    echo;
+    echo 'creates database + username with local rights';
+    echo;
+    echo usage:;
+    echo '    '$cmd help;
+    echo '    '$cmd init credentials\|schema;
+    echo;
+    echo example:;
+    echo '    '$cmd init schema name;
+    echo;
+    echo '    # creates username:finance and schema:finance_db';
+    echo '    '$cmd init credentials finance;
+    echo;
+    echo 'Sugar mysql & mysqldump tool';
+    echo;
+    echo usage:;
+    echo '    '$cmd help;
+    echo '    '$cmd list;
+    echo '    `'$cmd set\|clear'`';
+    echo example:;
+    echo '    `'$cmd set aps1'`';
+    echo '    `'$cmd clear'`';
+    echo '    '$cmd list;
+    echo '    '$cmd check;
+    echo;
 }
+
 
 checkout_command
 

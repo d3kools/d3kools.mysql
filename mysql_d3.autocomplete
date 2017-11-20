@@ -4,54 +4,9 @@ _script_d3_root() {
     local cur opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
-    opts="run-cli suffix-list suffix-set suffix-check suffix-clear dump-solid dump-all dump-data dump-schema restore-solid restore-all restore-data restore-schema restore-one drop-db truncate-db truncate-table info-check info-credentials info-structure init-credentials"
-    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-    return 0
-}
-_script_d3info() {
-    local cur opts
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    opts="help structure db check credentials"
-    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-    return 0
-}
-_script_d3init() {
-    local cur opts
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    opts="help credentials schema password"
-    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-    return 0
-}
-_script_d3dump() {
-    local cur opts
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    opts="help data schema solid all"
-    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-    return 0
-}
-_script_d3restore() {
-    local cur opts
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    opts="help data schema solid all truncate truncatetable drop"
-    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-    return 0
-}
-_script_d3suffix() {
-    local cur opts
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    opts="help set list check clear"
+    opts="help test run-cli suffix-list suffix-set suffix-check suffix-unset suffix-clear dump-solid dump-all dump-data dump-schema restore-solid restore-one restore-all restore-data restore-schema drop-db drop-table truncate-db truncate-table info-check info-credentials info-structure init-password init-credentials"
     COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
     return 0
 }
 
 complete -o nospace -F _script_d3_root mysql_d3
-complete -o nospace -F _script_d3info mysql_d3info
-complete -o nospace -F _script_d3init mysql_d3init
-complete -o nospace -F _script_d3dump mysql_d3dump
-complete -o nospace -F _script_d3restore mysql_d3restore
-complete -o nospace -F _script_d3suffix mysql_d3suffix
