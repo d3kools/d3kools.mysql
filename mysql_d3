@@ -2,9 +2,353 @@
 
 # ==========================
 # Import functions
-source `which mysql_d3_librc`
+# source `which mysql_d3_librc`
+cmd=`basename $0`
+if [ -z $1 ]; then
+    commandlet=''
+else
+    commandlet=`basename $1`
+fi
+dumpcontainer='mysqldump_'
+fileconfig="$HOME/.my.cnf"
+if [ ! -f $fileconfig ]; then
+    show_error 'config file not found' $fileconfig
+    exit;
+fi
+
+oldpwd=`pwd`
+
+# cmd pseudo-aliases cause of environment alias incapacity
+if [ -z $mysql_group_suffix ]; then
+    # echo could not extend mysqldump :  \$mysql_group_suffix is null;
+    cmd_mysql="mysql"
+    cmd_import="mysql"
+    # --skip-quote-names ?
+    cmd_dump="mysqldump --compact"
+else
+    cmd_mysql="mysql --defaults-group-suffix=$mysql_group_suffix"
+    cmd_import="mysql --defaults-group-suffix=$mysql_group_suffix"
+    cmd_dump="mysqldump --defaults-group-suffix=$mysql_group_suffix --compact"
+    # mysqldump flags
+    # --skip-opt
+    # --compact
+fi
+
+# single database specified with [mysql] in ~/.my.cnf use
+function get_config_variable {
+    local config_section=$1
+    local config_varname=$2
+    local sedsection="\[$config_section$mysql_group_suffix\]"
+    local sedregex="/^$sedsection/ { :l /^$config_varname[ ]*=/ { s/.*=[ ]*//; p; q;}; n; b l;}"
+    local parsed_value=`cat $fileconfig | sed 's/\r//' | sed -nr "$sedregex"`
+    echo -e ${parsed_value}
+    # echo -e ${parsed_value::-1} #crlf old remove
+}
+
+DB=`get_config_variable mysql database`
+user=`get_config_variable client user`
+
+function mysql_lambdaquery_read {
+    $cmd_mysql -D $DB -e "$1;" | sed '1d';
+}
+function mysql_lambdaquery_write {
+    $cmd_mysql -D $DB -e "SET foreign_key_checks=0; $1;"
+    return $?
+}
+function mysql_lambdaquery_showtables {
+    $cmd_mysql -D $DB -e "SHOW TABLES;" | sed '1d';
+}
+function mysql_import {
+    # $1 - $sqlfile
+    if [ -f "$1" ]; then
+        # echo injecting $1 ...
+        # $cmd_import -D $1 < $1; #old
+        $cmd_import -D $DB -e "`mysql_unset_local_variables $1`"
+        return $?;
+    else
+        show_error 'file not found' $1
+        return 1;
+    fi
+}
+function to_mysqldb_query {
+    $cmd_mysql -D 'mysql' -e "$1";
+}
+function get_sql_filename {
+    # check table argument
+    if [ -z $2 ]; then
+        echo $DB--$1.sql
+    else
+        echo $DB\_\_$2--$1.sql
+    fi
+}
+function mysql_unset_local_variables {
+    local cmtrline;
+    # mysql_dump_headers START
+    _mysql_dump_headers_before() {
+        local msvar_save_time_zone="SET @OLD_TIME_ZONE=@@TIME_ZONE, TIME_ZONE='+00:00'"
+        local msvar_save_unique_checks="SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0"
+        local msvar_save_foreign_key_checks="SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0"
+        local msvar_save_sql_mode="SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO'"
+        echo -n "$msvar_save_time_zone; $msvar_save_unique_checks; $msvar_save_foreign_key_checks; $msvar_save_sql_mode;"
+        # /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+        # /*!40103 SET TIME_ZONE='+00:00' */;
+        # /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+        # /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+        # /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+    }
+    # mysql_dump_headers BODY
+    _mysql_dump_headers_after() {
+        local msvar_restore_sql_mode="SET SQL_MODE=@OLD_SQL_MODE"
+        local msvar_restore_foreign_key_checks="SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS"
+        local msvar_restore_unique_checks="SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS"
+        local msvar_restore_time_zone="SET TIME_ZONE=@OLD_TIME_ZONE"
+        echo -n "$msvar_restore_sql_mode; $msvar_restore_foreign_key_checks; $msvar_restore_unique_checks; $msvar_restore_time_zone;"
+        # /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+        # /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+        # /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+        # /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+    }
+
+    # echo -n "SET foreign_key_checks=0; source" $1\; #old
+    echo -n `_mysql_dump_headers_before` source $1\; `_mysql_dump_headers_after`
+    unset -f _mysql_dump_headers_before
+    unset -f _mysql_dump_headers_after
+    return;
+}
+
+function avaliable {
+    echo "Avaliable commands : $avaliable_commands_list"
+    echo;
+}
+function show_help {
+    if [ "$commandlet" == 'help' ]; then
+        usage
+        exit;
+    fi
+}
+function show_error {
+    echo "[error]" $1 \: $2 >&2
+    echo
+}
+
+function checkout_connection {
+    $cmd_mysql -e '\c'
+    local connection_code=$?
+    # if [ $? -eq 0 ]; then
+        # connection_code=0;
+    # else
+        # connection_code=2;
+    # fi
+    if [ -z "$1" ]; then
+        # silent mode
+        if [ $connection_code -ne 0 ]; then
+            exit;
+        fi
+    else
+        # print mode
+        if [[ $1 == 'out' ]]; then
+            if [ $connection_code -ne 0 ]; then
+                # echo "no connection to DB:" $2;
+                echo 'Connection : Fails'
+            else
+                echo 'Connection : OK'
+            fi
+            return;
+        else
+            echo 'unknown mode'
+        fi
+        exit;
+    fi
+    # connection_code=$?;
+}
+
+function checkout_command {
+    if [ -z "$commandlet" ]; then
+        avaliable
+        exit;
+    fi
+}
+function checkout_database {
+    if [ -z "$DB" ]; then
+        show_error "specify database variable under [mysqlsuffix] section in $fileconfig" [mysql$mysql_group_suffix]
+        exit;
+    else
+        dumpcontainer=$dumpcontainer$DB
+    fi
+}
+function checkout_name {
+    if [ -z "$1" ]; then
+        echo 'specify name:';
+        echo '    '$cmd $commandlet NAME;
+        echo;
+        exit;
+    fi
+}
+function checkout_file {
+    if [ -z "$1" ]; then
+        echo 'specify file:';
+        echo '    '$cmd $commandlet FILE.SQL;
+        echo;
+        exit;
+    else
+        if [ -f $1 ]; then
+            echo $commandlet '->' 'from file:' $1 '-> to db:' $DB
+        else
+            show_error 'file not found' $1
+            exit;
+        fi
+    fi
+}
+function checkout_folder {
+    if [ -z "$1" ]; then
+        echo 'specify folder:';
+        echo '    '$cmd $commandlet FOLDER;
+        echo;
+        exit;
+    else
+        if [ -d $1 ]; then
+            echo $commandlet '->' 'from folder:' $1 '-> to db:' $DB
+        else
+            show_error 'folder not found $1'
+            exit;
+        fi
+    fi
+}
+function checkout_table {
+    if [ -z "$1" ]; then
+        echo 'specify table:';
+        echo '    '$cmd $commandlet TABLE;
+        echo;
+        exit;
+    fi
+}
+
+function not_recognized {
+    show_error 'Command does not recognized' $1
+    avaliable
+    exit 1;
+}
+
+function checkout_specified_database {
+    return 2;
+}
+
+# init
+function commandlet_generate_password {
+    mysql_lambdaquery_read "SELECT LEFT(MD5(RAND()), 10)";
+}
+function commandlet_dump_solid {
+    local file=`get_sql_filename solid`
+    echo dump solid \: $file
+    $cmd_dump --result-file=$file $DB
+}
+function commandlet_dump_data {
+    local arguments='--no-create-info --skip-extended-insert'
+    local file=`get_sql_filename data $1`
+    echo dump data \: $1 \>\> [$file]
+    $cmd_dump $arguments --result-file=$file $DB $1
+}
+function commandlet_dump_schema {
+    local arguments='--no-data'
+    local file=`get_sql_filename schema $1`
+    echo dump schema \: $1 \>\> [$file]
+    $cmd_dump $arguments --result-file=$file $DB $1
+}
+function commandlet_restore_solid {
+    local file=`get_sql_filename solid`
+    mysql_import "$file"
+    if [ $? -eq 0 ]; then
+        echo SOLID was restored \: $1 [$file]
+    fi
+}
+function commandlet_restore_onefile {
+    mysql_import "$1"
+    if [ $? -eq 0 ]; then
+        echo FILE was restored \: [$1]
+    fi
+}
+function commandlet_restore_data {
+    local file=`get_sql_filename data $1`
+    mysql_import "$file"
+    if [ $? -eq 0 ]; then
+        echo DATA were restored \: $1 [$file]
+    fi
+}
+function commandlet_restore_schema {
+    local file=`get_sql_filename schema $1`
+    mysql_import "$file"
+    if [ $? -eq 0 ]; then
+        echo SCHEMA was restored \: $1 [$file]
+    fi
+}
+function commandlet_drop_all_tables {
+    for TABLE in $( mysql_lambdaquery_showtables ); do
+        commandlet_drop_table $TABLE
+    done
+}
+function commandlet_drop_table {
+    mysql_lambdaquery_write "DROP TABLE IF EXISTS $1"
+    if [ $? -eq 0 ]; then
+        echo TABLE $1 was droped
+    fi
+}
+function commandlet_truncate_table {
+    mysql_lambdaquery_write "TRUNCATE $1"
+    if [ $? -eq 0 ]; then
+        echo TABLE $1 was truncated
+    fi
+}
+function commandlet_info_structure_func {
+    local COLUMNS_QUERY='SELECT count(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name ='
+    local TABLE_QUERY='SELECT count(*) FROM'
+    for TABLE in $( mysql_lambdaquery_showtables ); do
+        echo $TABLE "("\
+        $(mysql_lambdaquery_read "$COLUMNS_QUERY '$TABLE'")\
+        ") : "\
+        $(mysql_lambdaquery_read "$TABLE_QUERY $TABLE");
+    done
+}
+function commandlet_info_structure_print {
+    if [ `which column` ]; then
+        commandlet_info_structure_func | column -t;
+    else
+        commandlet_info_structure_func;
+    fi
+}
+function commandlet_init_user_credentials {
+    local grants_gl_disabledprivs="'N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N'"
+    local grants_gl_enabledprivs="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'"
+    local grants_gl_settings="'','','','',0,0,0,0,'',NULL"
+    local grants_db_readonly="'Y','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N'"
+    local grants_db_minimal="'Y','Y','Y','Y','Y','Y','N','Y','Y','Y','N','Y','N','N','N','N','N','N','N'"
+    local grants_db_maximal="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'"
+
+    local new_username=$2
+    local new_schemaname=$new_username"_db"
+    local password=`commandlet_generate_password`
+
+    echo ------------------------
+    echo username : $new_username
+    echo password : $password
+    echo database : $new_schemaname
+    echo ------------------------
+
+    # echo
+    echo "CREATE DATABASE '$new_schemaname'"
+    to_mysqldb_query "CREATE DATABASE $new_schemaname"
+    # echo
+    echo "INSERT INTO user VALUES ('localhost' , '$new_username' , '$password' , grants_gl_disabledprivs , grants_gl_settings)"
+    to_mysqldb_query "INSERT INTO user VALUES ('localhost','$new_username',PASSWORD('$password'), $grants_gl_disabledprivs , $grants_gl_settings)"
+    # echo
+    echo "INSERT INTO db VALUES ('localhost' , '$new_schemaname' , '$new_username' , grants_db_minimal)"
+    to_mysqldb_query "INSERT INTO db VALUES ('localhost' , '$new_schemaname' , '$new_username' , $grants_db_minimal)"
+    # echo
+    echo ------------------------
+    echo 'created'
+}
 
 avaliable_commands_list='run-cli suffix-list suffix-set suffix-check suffix-clear dump-solid dump-all dump-data dump-schema restore-solid restore-all restore-data restore-schema restore-one drop-db truncate-db truncate-table info-check info-credentials info-structure init-credentials'
+
 function usage {
     echo
     echo 'Modify data in database'
@@ -54,7 +398,6 @@ function usage {
     echo '    '$cmd check;
     echo;
 }
-
 
 checkout_command
 
@@ -128,7 +471,7 @@ if test $commandlet == 'dump-all'; then
         if [ -d $2 ]; then
             cd $2
         else
-            show_error 'not folder' $2
+            show_error 'no folder' $2
             exit;
         fi
     fi
