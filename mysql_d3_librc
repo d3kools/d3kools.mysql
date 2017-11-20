@@ -9,7 +9,7 @@ fi
 dumpcontainer='mysqldump_'
 fileconfig="$HOME/.my.cnf"
 if [ ! -f $fileconfig ]; then
-    echo $fileconfig not found;
+    echo $fileconfig not found >&2
     exit;
 fi
 
@@ -49,7 +49,8 @@ function mysql_lambdaquery_read {
     $cmd_mysql -D $1 -e "$2;" | sed '1d';
 }
 function mysql_lambdaquery_write {
-    $cmd_mysql -D $DB -e "SET foreign_key_checks=0; $1;" | sed '1d'
+    $cmd_mysql -D $DB -e "SET foreign_key_checks=0; $1;"
+    return $?
 }
 function mysql_lambdaquery_showtables {
     $cmd_mysql -D $DB -e "SHOW TABLES;" | sed '1d';
@@ -57,11 +58,13 @@ function mysql_lambdaquery_showtables {
 function mysql_import {
     # $1 - $sqlfile
     if [ -f "$1" ]; then
-        echo injecting $1 ...
+        # echo injecting $1 ...
         # $cmd_import -D $1 < $1; #old
         $cmd_import -D $DB -e "`mysql_unset_local_variables $1`"
+        return $?;
     else
-        echo error: $1 not found
+        echo error: $1 not found >&2
+        return 1;
     fi
 }
 function to_mysqldb_query {
@@ -177,31 +180,31 @@ function checkout_name {
     fi
 }
 function checkout_file {
-    if [ -z "$3" ]; then
+    if [ -z "$1" ]; then
         echo 'specify file:';
-        echo '    '$cmd $1 $2 FILE.SQL;
+        echo '    '$cmd $commandlet FILE.SQL;
         echo;
         exit;
     else
-        if [ -f $3 ]; then
-            echo $1 '->' 'from file:' $3 '-> to db:' $2
+        if [ -f $1 ]; then
+            echo $commandlet '->' 'from file:' $1 '-> to db:' $DB
         else
-            echo 'file not found : ' $3
+            echo 'file not found : ' $1 >&2
             exit;
         fi
     fi
 }
 function checkout_folder {
-    if [ -z "$3" ]; then
+    if [ -z "$1" ]; then
         echo 'specify folder:';
-        echo '    '$cmd $1 $2 FOLDER;
+        echo '    '$cmd $commandlet FOLDER;
         echo;
         exit;
     else
-        if [ -d $3 ]; then
-            echo $1 '->' 'from folder:' $3 '-> to db:' $2
+        if [ -d $1 ]; then
+            echo $commandlet '->' 'from folder:' $1 '-> to db:' $DB
         else
-            echo 'folder not found : ' $3
+            echo 'folder not found : ' $1 >&2
             exit;
         fi
     fi
@@ -216,8 +219,8 @@ function checkout_table {
 }
 
 function not_recognized {
-    echo Command \`$1\` does not recognized;
-    avaliable;
+    echo Command \`$1\` does not recognized >&2
+    avaliable
 }
 
 function checkout_specified_database {
@@ -231,34 +234,64 @@ function generate_password {
 
 function commandlet_dump_solid {
     local file=`get_sql_filename solid`
-    $cmd_dump --result-file=$file $DB
     echo dump solid \: $file
+    $cmd_dump --result-file=$file $DB
 }
 function commandlet_dump_data {
     local arguments='--no-create-info --skip-extended-insert'
     local file=`get_sql_filename data $1`
+    echo dump data \: $1 \>\> [$file]
     $cmd_dump $arguments --result-file=$file $DB $1
-    echo dump data \: $1 [$file]
 }
 function commandlet_dump_schema {
     local arguments='--no-data'
     local file=`get_sql_filename schema $1`
+    echo dump schema \: $1 \>\> [$file]
     $cmd_dump $arguments --result-file=$file $DB $1
-    echo dump schema \: $1 [$file]
+}
+function commandlet_restore_solid {
+    local file=`get_sql_filename solid`
+    mysql_import "$file"
+    if [ $? -eq 0 ]; then
+        echo SOLID was restored \: $1 [$file]
+    fi
+}
+function commandlet_restore_onefile {
+    mysql_import "$1"
+    if [ $? -eq 0 ]; then
+        echo FILE was restored \: [$1]
+    fi
+}
+function commandlet_restore_data {
+    local file=`get_sql_filename data $1`
+    mysql_import "$file"
+    if [ $? -eq 0 ]; then
+        echo DATA were restored \: $1 [$file]
+    fi
 }
 function commandlet_restore_schema {
-    local arguments='--no-data'
     local file=`get_sql_filename schema $1`
     mysql_import "$file"
-    echo restore schema \: $1 [$file]
+    if [ $? -eq 0 ]; then
+        echo SCHEMA was restored \: $1 [$file]
+    fi
+}
+function commandlet_drop_all_tables {
+    for TABLE in $( mysql_lambdaquery_showtables ); do
+        commandlet_drop_table $TABLE
+    done
 }
 function commandlet_drop_table {
     mysql_lambdaquery_write "DROP TABLE IF EXISTS $1"
-    echo TABLE $1 was droped
+    if [ $? -eq 0 ]; then
+        echo TABLE $1 was droped
+    fi
 }
 function commandlet_truncate_table {
     mysql_lambdaquery_write "TRUNCATE $1"
-    echo TABLE $1 was truncated
+    if [ $? -eq 0 ]; then
+        echo TABLE $1 was truncated
+    fi
 }
 function commandlet_info_structure_func {
     local COLUMNS_QUERY='SELECT count(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name ='
