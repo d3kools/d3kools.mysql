@@ -23,56 +23,61 @@ function usage {
     echo
 }
 
-checkout_command $@
-show_help $1
+checkout_command
 
-oldpwd=`pwd`;
-
-if test $1 == 'run-cli'; then
-    $cmd_mysql;
+# show_help $commandlet
+if test $commandlet == 'help'; then
+    usage
     exit;
 fi
 
-if test $1 == 'suffix-list'; then
-    mycnf=~/.my.cnf;
-    if [ -f $mycnf ]; then
-        # client..*\
-        cat $mycnf | grep -e "\[client.*\]" | sed -e "s/^\[client/-/" -e "s/\]//";
+if test $commandlet == 'test'; then
+    echo cmd \: $cmd
+    echo commandlet \: $commandlet
+    echo suffix \: $mysql_group_suffix
+    echo user \: $user
+    echo database \: $DB
+    echo
+    exit;
+fi
+
+if test $commandlet == 'run-cli'; then
+    $cmd_mysql
+    exit;
+fi
+
+if test $commandlet == 'suffix-list'; then
+    cat $fileconfig | grep -e "\[client.*\]" | sed -e "s/^\[client/-/" -e "s/\]//"
+    exit;
+fi
+
+if test $commandlet == 'suffix-set'; then
+    echo export mysql_group_suffix=$2
+    exit;
+fi
+
+if test $commandlet == 'suffix-check'; then
+    if [ -z "$mysql_group_suffix" ]; then
+        echo no suffix set
     else
-        echo $mycnf not found;
+        echo current suffix \: $mysql_group_suffix
     fi
     exit;
 fi
 
-if test $1 == 'suffix-set'; then
-    echo export mysql_group_suffix=$2;
+if test $commandlet == 'suffix-clear'; then
+    echo unset mysql_group_suffix
     exit;
 fi
 
-if test $1 == 'suffix-check'; then
-    if [ -z $mysql_group_suffix ]; then
-        echo no suffix set;
-    else
-        echo current suffix : $mysql_group_suffix;
-    fi
+if test $commandlet == 'dump-solid'; then
+    checkout_database
+    commandlet_dump_solid
     exit;
 fi
 
-if test $1 == 'suffix-clear'; then
-    echo unset mysql_group_suffix;
-    exit;
-fi
-
-if test $1 == 'dump-solid'; then
-    checkout_database $@
-    file=$2--solid.sql
-    $cmd_dump --result-file=$file $2
-    echo created: $file
-    exit;
-fi
-
-if test $1 == 'dump-all'; then
-    checkout_database $@
+if test $commandlet == 'dump-all'; then
+    checkout_database
 
     if [ ! -d $dumpcontainer ]; then
         mkdir $dumpcontainer
@@ -81,133 +86,132 @@ if test $1 == 'dump-all'; then
     mkdir $dumpcontainer/$folder
     cd $dumpcontainer/$folder
 
-    for i in $( mysql_lambdaquery_showtables $2 ); do
-        echo "table: " $i
-        mysql_d3dump schema $2 $i
-        mysql_d3dump data $2 $i
+    for i in $( mysql_lambdaquery_showtables ); do
+        # echo "table: " $i
+        # echo -en "\t"
+        commandlet_dump_schema $i
+        # echo -en "\t"
+        commandlet_dump_data $i
+        # echo
     done
 
-    if [ `which column` ]; then
-        mysql_d3info structure $2 | column -t > structure.txt;
-    else
-        mysql_d3info structure $2 > structure.txt;
-        # @TODO: column analog
-    fi
+    # commandlet_dump_solid
 
-    # mysql_d3dump solid $2
+    commandlet_info_structure_print > structure.txt
+
     cd ../..
-
+    echo
     exit;
 fi
 
-if test $1 == 'dump-data'; then
+if test $commandlet == 'dump-data'; then
     # mysqldump --compact --no-create-info --skip-extended-insert --result-file=DB__TABLE--data.sql DB TABLE
-    checkout_database $@
-    checkout_table $@
-    arguments='--no-create-info --skip-extended-insert'
-    file=$2__$3--data.sql
-    $cmd_dump $arguments --result-file=$file $2 $3
+    checkout_database
+    checkout_table $2
+    commandlet_dump_data $2
+    echo
     exit;
 fi
 
-if test $1 == 'dump-schema'; then
-    checkout_database $@
-    checkout_table $@
-    arguments='--no-data'
-    file=$2__$3--schema.sql
-    $cmd_dump $arguments --result-file=$file $2 $3
+if test $commandlet == 'dump-schema'; then
+    checkout_database
+    checkout_table $2
+    commandlet_dump_schema $2
+    echo
     exit;
 fi
 
-if test $1 == 'restore-solid'; then
-    checkout_database $@
-    mysql_import "$2" "$2--solid.sql";
-    cd $oldpwd;
+if test $commandlet == 'restore-solid'; then
+    checkout_database
+    commandlet_restore_solid
     exit;
 fi
 
-if test $1 == 'restore-all'; then
-    checkout_database $@
-    checkout_folder $@
-    cd $3;
-    mysql_d3restore drop $2;
-    echo;
-    for f in $( ls -1 $2__*--schema.sql ); do
+if test $commandlet == 'restore-one'; then
+    checkout_database
+    checkout_file $2
+    commandlet_restore_onefile $2
+    exit;
+fi
+
+if test $commandlet == 'restore-all'; then
+    checkout_database
+    checkout_folder $2
+    cd $2
+    echo
+    commandlet_drop_all_tables
+    echo
+    for f in $( ls -1 $DB__*--schema.sql ); do
         # extract table name
-        f=${f%--schema.sql};
-        f=${f#$2__};
-        mysql_d3restore schema $2 $f;
+        f=${f%--schema.sql}
+        f=${f#$DB\_\_}
+        commandlet_restore_schema $f
     done
-    echo;
-    for f in $( ls -1 $2__*--data.sql ); do
+    echo
+    for f in $( ls -1 $DB__*--data.sql ); do
         # extract table name
-        f=${f%--data.sql};
-        f=${f#$2__};
-        mysql_d3restore data $2 $f;
+        f=${f%--data.sql}
+        f=${f#$DB\_\_}
+        commandlet_restore_data $f
     done
-    echo;
-    if [ `which column` ]; then
-        mysql_d3info structure $2 | column -t;
-    else
-        mysql_d3info structure $2;
-    fi
-    cd $oldpwd;
+    echo
+    commandlet_info_structure_print
+    cd $oldpwd
     exit;
 fi
 
-if test $1 == 'restore-data'; then
-    checkout_database $@
-    checkout_table $@
-    mysql_import "$2" "$2__$3--data.sql";
+if test $commandlet == 'restore-data'; then
+    checkout_database
+    checkout_table $2
+    commandlet_restore_data $2
     exit;
 fi
 
-if test $1 == 'restore-schema'; then
-    checkout_database $@
-    checkout_table $@
-    mysql_import "$2" "$2__$3--schema.sql";
+if test $commandlet == 'restore-schema'; then
+    checkout_database
+    checkout_table $2
+    commandlet_restore_schema $2
     exit;
 fi
 
-if test $1 == 'restore-one'; then
-    checkout_database $@
-    checkout_file $@
-    mysql_import "$2" "$3";
+if test $commandlet == 'drop-db'; then
+    checkout_database
+    commandlet_drop_all_tables
+    echo
+    echo Tables were droped
     exit;
 fi
 
-if test $1 == 'drop-db'; then
-    checkout_database $@
-    for TABLE in $( mysql_lambdaquery_showtables $2 ); do
-        mysql_lambdaquery_write $2 "DROP TABLE IF EXISTS $TABLE";
+if test $commandlet == 'drop-table'; then
+    checkout_database
+    checkout_table $2
+    commandlet_drop_table $2
+    exit;
+fi
+
+if test $commandlet == 'truncate-db'; then
+    checkout_database
+    for TABLE in $( mysql_lambdaquery_showtables ); do
+        commandlet_truncate_table $TABLE
     done
-    echo All tables droped
+    echo
+    echo Tables were truncated
     exit;
 fi
 
-if test $1 == 'truncate-db'; then
-    checkout_database $@
-    for TABLE in $( mysql_lambdaquery_showtables $2 ); do
-        mysql_lambdaquery_write $2 "TRUNCATE $TABLE";
-    done
-    echo All TABLES were truncated
+if test $commandlet == 'truncate-table'; then
+    checkout_database
+    checkout_table $2
+    commandlet_truncate_table $2
     exit;
 fi
 
-if test $1 == 'truncate-table'; then
-    checkout_database $@
-    checkout_table $@
-    mysql_lambdaquery_write $2 "TRUNCATE $3"
-    echo TABLE $3 was truncated
-    exit;
-fi
-
-if test $1 == 'info-check'; then
+if test $commandlet == 'info-check'; then
     checkout_connection out;
     exit;
 fi
 
-if test $1 == 'info-credentials'; then
+if test $commandlet == 'info-credentials'; then
     to_mysqldb_query "SELECT Host,User,Password FROM user";
     to_mysqldb_query "SELECT Host,Db,User FROM db";
     to_mysqldb_query "SELECT * FROM servers";
@@ -216,21 +220,14 @@ if test $1 == 'info-credentials'; then
     exit;
 fi
 
-if test $1 == 'info-structure'; then
-    checkout_database $@
-    checkout_connection;
-    COLUMNS_QUERY='SELECT count(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name =';
-    TABLE_QUERY='SELECT count(*) FROM';
-    for TABLE in $( mysql_lambdaquery_showtables $2 ); do
-        echo $TABLE "("\
-        $(mysql_lambdaquery_read $2 "$COLUMNS_QUERY '$TABLE'")\
-        ") : "\
-        $(mysql_lambdaquery_read $2 "$TABLE_QUERY $TABLE") ;
-    done
+if test $commandlet == 'info-structure'; then
+    checkout_database
+    checkout_connection
+    commandlet_info_structure_print
     exit;
 fi
 
-if test $1 == 'init-credentials'; then
+if test $commandlet == 'init-credentials'; then
     checkout_name $@;
     # echo create $2;
 
