@@ -142,6 +142,21 @@ function checkout_name {
         exit;
     fi
 }
+function checkout_file {
+    if [ -z "$3" ]; then
+        echo 'specify file:';
+        echo '    '$cmd $1 $2 FILE.SQL;
+        echo;
+        exit;
+    else
+        if [ -f $3 ]; then
+            echo $1 '->' 'from file:' $3 '-> to db:' $2
+        else
+            echo 'file not found : ' $3
+            exit;
+        fi
+    fi
+}
 function checkout_folder {
     if [ -z "$3" ]; then
         echo 'specify folder:';
@@ -173,6 +188,11 @@ function not_recognized {
 
 function checkout_specified_database {
     return 2;
+}
+
+# init
+function generate_password {
+    mysql_lambdaquery_read 'mysql' "SELECT LEFT(MD5(RAND()), 10)";
 }
 
 # echo '$0:' $0; echo '$1:' $1; echo '$2:' $2; echo '$3:' $3; echo '$4:' $4;
