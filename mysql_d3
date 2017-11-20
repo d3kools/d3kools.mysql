@@ -4,13 +4,264 @@
 # Import functions
 source `which mysql_d3_librc`
 
-avaliable_commands_list='run'
+avaliable_commands_list='run-cli suffix-list suffix-set suffix-check suffix-clear dump-solid dump-all dump-data dump-schema restore-solid restore-all restore-data restore-schema restore-one drop-db truncate-db truncate-table info-check info-credentials info-structure init-credentials'
+function usage {
+    echo
+    echo 'Modify data in database'
+    echo 'Import data from database__table--type.sql file , wo output'
+    echo 'Export data to database__table--type.sql file , wo output'
+    echo
+    echo usage:
+    echo '    '$cmd help;
+    echo '    '$cmd all\|solid DATABASE;
+    echo '    '$cmd data\|schema DATABASE [TABLE];
+    echo example:
+    echo '    '$cmd data mysql Users
+    echo '    '$cmd schema mysql Users
+    echo '    '$cmd all wpb
+    echo '    '$cmd truncate wpb
+    echo
+}
 
 checkout_command $@
 show_help $1
 
-if test $1 == 'run'; then
+oldpwd=`pwd`;
+
+if test $1 == 'run-cli'; then
     $cmd_mysql;
+    exit;
+fi
+
+if test $1 == 'suffix-list'; then
+    mycnf=~/.my.cnf;
+    if [ -f $mycnf ]; then
+        # client..*\
+        cat $mycnf | grep -e "\[client.*\]" | sed -e "s/^\[client/-/" -e "s/\]//";
+    else
+        echo $mycnf not found;
+    fi
+    exit;
+fi
+
+if test $1 == 'suffix-set'; then
+    echo export mysql_group_suffix=$2;
+    exit;
+fi
+
+if test $1 == 'suffix-check'; then
+    if [ -z $mysql_group_suffix ]; then
+        echo no suffix set;
+    else
+        echo current suffix : $mysql_group_suffix;
+    fi
+    exit;
+fi
+
+if test $1 == 'suffix-clear'; then
+    echo unset mysql_group_suffix;
+    exit;
+fi
+
+if test $1 == 'dump-solid'; then
+    checkout_database $@
+    file=$2--solid.sql
+    $cmd_dump --result-file=$file $2
+    echo created: $file
+    exit;
+fi
+
+if test $1 == 'dump-all'; then
+    checkout_database $@
+
+    if [ ! -d $dumpcontainer ]; then
+        mkdir $dumpcontainer
+    fi
+    folder=`date '+%Y%m%d-%H%M%S'`
+    mkdir $dumpcontainer/$folder
+    cd $dumpcontainer/$folder
+
+    for i in $( mysql_lambdaquery_showtables $2 ); do
+        echo "table: " $i
+        mysql_d3dump schema $2 $i
+        mysql_d3dump data $2 $i
+    done
+
+    if [ `which column` ]; then
+        mysql_d3info structure $2 | column -t > structure.txt;
+    else
+        mysql_d3info structure $2 > structure.txt;
+        # @TODO: column analog
+    fi
+
+    # mysql_d3dump solid $2
+    cd ../..
+
+    exit;
+fi
+
+if test $1 == 'dump-data'; then
+    # mysqldump --compact --no-create-info --skip-extended-insert --result-file=DB__TABLE--data.sql DB TABLE
+    checkout_database $@
+    checkout_table $@
+    arguments='--no-create-info --skip-extended-insert'
+    file=$2__$3--data.sql
+    $cmd_dump $arguments --result-file=$file $2 $3
+    exit;
+fi
+
+if test $1 == 'dump-schema'; then
+    checkout_database $@
+    checkout_table $@
+    arguments='--no-data'
+    file=$2__$3--schema.sql
+    $cmd_dump $arguments --result-file=$file $2 $3
+    exit;
+fi
+
+if test $1 == 'restore-solid'; then
+    checkout_database $@
+    mysql_import "$2" "$2--solid.sql";
+    cd $oldpwd;
+    exit;
+fi
+
+if test $1 == 'restore-all'; then
+    checkout_database $@
+    checkout_folder $@
+    cd $3;
+    mysql_d3restore drop $2;
+    echo;
+    for f in $( ls -1 $2__*--schema.sql ); do
+        # extract table name
+        f=${f%--schema.sql};
+        f=${f#$2__};
+        mysql_d3restore schema $2 $f;
+    done
+    echo;
+    for f in $( ls -1 $2__*--data.sql ); do
+        # extract table name
+        f=${f%--data.sql};
+        f=${f#$2__};
+        mysql_d3restore data $2 $f;
+    done
+    echo;
+    if [ `which column` ]; then
+        mysql_d3info structure $2 | column -t;
+    else
+        mysql_d3info structure $2;
+    fi
+    cd $oldpwd;
+    exit;
+fi
+
+if test $1 == 'restore-data'; then
+    checkout_database $@
+    checkout_table $@
+    mysql_import "$2" "$2__$3--data.sql";
+    exit;
+fi
+
+if test $1 == 'restore-schema'; then
+    checkout_database $@
+    checkout_table $@
+    mysql_import "$2" "$2__$3--schema.sql";
+    exit;
+fi
+
+if test $1 == 'restore-one'; then
+    checkout_database $@
+    checkout_file $@
+    mysql_import "$2" "$3";
+    exit;
+fi
+
+if test $1 == 'drop-db'; then
+    checkout_database $@
+    for TABLE in $( mysql_lambdaquery_showtables $2 ); do
+        mysql_lambdaquery_write $2 "DROP TABLE IF EXISTS $TABLE";
+    done
+    echo All tables droped
+    exit;
+fi
+
+if test $1 == 'truncate-db'; then
+    checkout_database $@
+    for TABLE in $( mysql_lambdaquery_showtables $2 ); do
+        mysql_lambdaquery_write $2 "TRUNCATE $TABLE";
+    done
+    echo All TABLES were truncated
+    exit;
+fi
+
+if test $1 == 'truncate-table'; then
+    checkout_database $@
+    checkout_table $@
+    mysql_lambdaquery_write $2 "TRUNCATE $3"
+    echo TABLE $3 was truncated
+    exit;
+fi
+
+if test $1 == 'info-check'; then
+    checkout_connection out;
+    exit;
+fi
+
+if test $1 == 'info-credentials'; then
+    to_mysqldb_query "SELECT Host,User,Password FROM user";
+    to_mysqldb_query "SELECT Host,Db,User FROM db";
+    to_mysqldb_query "SELECT * FROM servers";
+    to_mysqldb_query "SELECT Host,Db FROM host";
+    to_mysqldb_query "SELECT Host,Db,User,Table_name FROM tables_priv";
+    exit;
+fi
+
+if test $1 == 'info-structure'; then
+    checkout_database $@
+    checkout_connection;
+    COLUMNS_QUERY='SELECT count(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name =';
+    TABLE_QUERY='SELECT count(*) FROM';
+    for TABLE in $( mysql_lambdaquery_showtables $2 ); do
+        echo $TABLE "("\
+        $(mysql_lambdaquery_read $2 "$COLUMNS_QUERY '$TABLE'")\
+        ") : "\
+        $(mysql_lambdaquery_read $2 "$TABLE_QUERY $TABLE") ;
+    done
+    exit;
+fi
+
+if test $1 == 'init-credentials'; then
+    checkout_name $@;
+    # echo create $2;
+
+    local grants_gl_disabledprivs="'N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N'";
+    local grants_gl_enabledprivs="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'";
+    local grants_gl_settings="'','','','',0,0,0,0,'',NULL";
+    local grants_db_readonly="'Y','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N'";
+    local grants_db_minimal="'Y','Y','Y','Y','Y','Y','N','Y','Y','Y','N','Y','N','N','N','N','N','N','N'";
+    local grants_db_maximal="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'";
+
+    new_username=$2;
+    new_schemaname=$new_username"_db";
+    password=`generate_password`;
+
+    echo ------------------------;
+    echo username : $new_username;
+    echo password : $password;
+    echo database : $new_schemaname;
+    echo ------------------------;
+    # echo;
+    echo "CREATE DATABASE '$new_schemaname'";
+    to_mysqldb_query "CREATE DATABASE $new_schemaname";
+    # echo;
+    echo "INSERT INTO user VALUES ('localhost' , '$new_username' , '$password' , grants_gl_disabledprivs , grants_gl_settings)";
+    to_mysqldb_query "INSERT INTO user VALUES ('localhost','$new_username',PASSWORD('$password'), $grants_gl_disabledprivs , $grants_gl_settings)";
+    # echo;
+    echo "INSERT INTO db VALUES ('localhost' , '$new_schemaname' , '$new_username' , grants_db_minimal)";
+    to_mysqldb_query "INSERT INTO db VALUES ('localhost' , '$new_schemaname' , '$new_username' , $grants_db_minimal)";
+    # echo;
+    echo ------------------------;
+    echo 'created';
     exit;
 fi
 
