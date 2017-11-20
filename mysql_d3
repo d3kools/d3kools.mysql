@@ -65,6 +65,11 @@ if test $commandlet == 'suffix-check'; then
     exit;
 fi
 
+if test $commandlet == 'suffix-unset'; then
+    echo unset mysql_group_suffix
+    exit;
+fi
+
 if test $commandlet == 'suffix-clear'; then
     echo unset mysql_group_suffix
     exit;
@@ -79,12 +84,21 @@ fi
 if test $commandlet == 'dump-all'; then
     checkout_database
 
-    if [ ! -d $dumpcontainer ]; then
-        mkdir $dumpcontainer
+    if [ -z "$2" ]; then
+        if [ ! -d $dumpcontainer ]; then
+            mkdir $dumpcontainer
+        fi
+        folder=`date '+%Y%m%d-%H%M%S'`
+        mkdir $dumpcontainer/$folder
+        cd $dumpcontainer/$folder
+    else
+        if [ -d $2 ]; then
+            cd $2
+        else
+            show_error 'not folder' $2
+            exit;
+        fi
     fi
-    folder=`date '+%Y%m%d-%H%M%S'`
-    mkdir $dumpcontainer/$folder
-    cd $dumpcontainer/$folder
 
     for i in $( mysql_lambdaquery_showtables ); do
         # echo "table: " $i
@@ -99,13 +113,12 @@ if test $commandlet == 'dump-all'; then
 
     commandlet_info_structure_print > structure.txt
 
-    cd ../..
+    cd $oldpwd
     echo
     exit;
 fi
 
 if test $commandlet == 'dump-data'; then
-    # mysqldump --compact --no-create-info --skip-extended-insert --result-file=DB__TABLE--data.sql DB TABLE
     checkout_database
     checkout_table $2
     commandlet_dump_data $2
@@ -207,16 +220,16 @@ if test $commandlet == 'truncate-table'; then
 fi
 
 if test $commandlet == 'info-check'; then
-    checkout_connection out;
+    checkout_connection out
     exit;
 fi
 
 if test $commandlet == 'info-credentials'; then
-    to_mysqldb_query "SELECT Host,User,Password FROM user";
-    to_mysqldb_query "SELECT Host,Db,User FROM db";
-    to_mysqldb_query "SELECT * FROM servers";
-    to_mysqldb_query "SELECT Host,Db FROM host";
-    to_mysqldb_query "SELECT Host,Db,User,Table_name FROM tables_priv";
+    to_mysqldb_query "SELECT Host,User,Password FROM user"
+    to_mysqldb_query "SELECT Host,Db,User FROM db"
+    to_mysqldb_query "SELECT * FROM servers"
+    to_mysqldb_query "SELECT Host,Db FROM host"
+    to_mysqldb_query "SELECT Host,Db,User,Table_name FROM tables_priv"
     exit;
 fi
 
@@ -227,38 +240,15 @@ if test $commandlet == 'info-structure'; then
     exit;
 fi
 
+if test $commandlet == 'init-password'; then
+    password=`commandlet_generate_password`
+    echo 'generated :' $password
+    exit;
+fi
+
 if test $commandlet == 'init-credentials'; then
-    checkout_name $@;
-    # echo create $2;
-
-    local grants_gl_disabledprivs="'N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N'";
-    local grants_gl_enabledprivs="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'";
-    local grants_gl_settings="'','','','',0,0,0,0,'',NULL";
-    local grants_db_readonly="'Y','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N'";
-    local grants_db_minimal="'Y','Y','Y','Y','Y','Y','N','Y','Y','Y','N','Y','N','N','N','N','N','N','N'";
-    local grants_db_maximal="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'";
-
-    new_username=$2;
-    new_schemaname=$new_username"_db";
-    password=`generate_password`;
-
-    echo ------------------------;
-    echo username : $new_username;
-    echo password : $password;
-    echo database : $new_schemaname;
-    echo ------------------------;
-    # echo;
-    echo "CREATE DATABASE '$new_schemaname'";
-    to_mysqldb_query "CREATE DATABASE $new_schemaname";
-    # echo;
-    echo "INSERT INTO user VALUES ('localhost' , '$new_username' , '$password' , grants_gl_disabledprivs , grants_gl_settings)";
-    to_mysqldb_query "INSERT INTO user VALUES ('localhost','$new_username',PASSWORD('$password'), $grants_gl_disabledprivs , $grants_gl_settings)";
-    # echo;
-    echo "INSERT INTO db VALUES ('localhost' , '$new_schemaname' , '$new_username' , grants_db_minimal)";
-    to_mysqldb_query "INSERT INTO db VALUES ('localhost' , '$new_schemaname' , '$new_username' , $grants_db_minimal)";
-    # echo;
-    echo ------------------------;
-    echo 'created';
+    checkout_name $2
+    commandlet_init_user_credentials
     exit;
 fi
 

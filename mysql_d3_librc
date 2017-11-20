@@ -9,7 +9,7 @@ fi
 dumpcontainer='mysqldump_'
 fileconfig="$HOME/.my.cnf"
 if [ ! -f $fileconfig ]; then
-    echo $fileconfig not found >&2
+    show_error 'config file not found' $fileconfig
     exit;
 fi
 
@@ -46,7 +46,7 @@ DB=`get_config_variable mysql database`
 user=`get_config_variable client user`
 
 function mysql_lambdaquery_read {
-    $cmd_mysql -D $1 -e "$2;" | sed '1d';
+    $cmd_mysql -D $DB -e "$1;" | sed '1d';
 }
 function mysql_lambdaquery_write {
     $cmd_mysql -D $DB -e "SET foreign_key_checks=0; $1;"
@@ -63,7 +63,7 @@ function mysql_import {
         $cmd_import -D $DB -e "`mysql_unset_local_variables $1`"
         return $?;
     else
-        echo error: $1 not found >&2
+        show_error 'file not found' $1
         return 1;
     fi
 }
@@ -113,21 +113,25 @@ function mysql_unset_local_variables {
     return;
 }
 
-
 function avaliable {
-    echo "Avaliable commands : $avaliable_commands_list";
+    echo "Avaliable commands : $avaliable_commands_list"
     echo;
 }
 function show_help {
     if [ "$commandlet" == 'help' ]; then
-        usage;
+        usage
         exit;
     fi
 }
 
+function show_error {
+    echo "[error]" $1 \: $2 >&2
+    echo
+}
+
 function checkout_connection {
-    $cmd_mysql -e '\c';
-    local connection_code=$?;
+    $cmd_mysql -e '\c'
+    local connection_code=$?
     # if [ $? -eq 0 ]; then
         # connection_code=0;
     # else
@@ -143,13 +147,13 @@ function checkout_connection {
         if [[ $1 == 'out' ]]; then
             if [ $connection_code -ne 0 ]; then
                 # echo "no connection to DB:" $2;
-                echo 'Connection : Fails';
+                echo 'Connection : Fails'
             else
-                echo 'Connection : OK';
+                echo 'Connection : OK'
             fi
             return;
         else
-            echo 'unknown mode';
+            echo 'unknown mode'
         fi
         exit;
     fi
@@ -157,24 +161,23 @@ function checkout_connection {
 }
 
 function checkout_command {
-    if [ -z "$ commandlet" ]; then
-        avaliable;
+    if [ -z "$commandlet" ]; then
+        avaliable
         exit;
     fi
 }
 function checkout_database {
     if [ -z "$DB" ]; then
-        echo "specify database with [mysql] section in $fileconfig"
-        echo
+        show_error "specify database variable under [mysqlsuffix] section in $fileconfig" [mysql$mysql_group_suffix]
         exit;
     else
         dumpcontainer=$dumpcontainer$DB
     fi
 }
 function checkout_name {
-    if [ -z "$2" ]; then
+    if [ -z "$1" ]; then
         echo 'specify name:';
-        echo '    '$cmd $1 NAME;
+        echo '    '$cmd $commandlet NAME;
         echo;
         exit;
     fi
@@ -189,7 +192,7 @@ function checkout_file {
         if [ -f $1 ]; then
             echo $commandlet '->' 'from file:' $1 '-> to db:' $DB
         else
-            echo 'file not found : ' $1 >&2
+            show_error 'file not found' $1
             exit;
         fi
     fi
@@ -204,7 +207,7 @@ function checkout_folder {
         if [ -d $1 ]; then
             echo $commandlet '->' 'from folder:' $1 '-> to db:' $DB
         else
-            echo 'folder not found : ' $1 >&2
+            show_error 'folder not found $1'
             exit;
         fi
     fi
@@ -219,8 +222,9 @@ function checkout_table {
 }
 
 function not_recognized {
-    echo Command \`$1\` does not recognized >&2
+    show_error 'Command does not recognized' $1
     avaliable
+    exit 1;
 }
 
 function checkout_specified_database {
@@ -228,10 +232,9 @@ function checkout_specified_database {
 }
 
 # init
-function generate_password {
-    mysql_lambdaquery_read 'mysql' "SELECT LEFT(MD5(RAND()), 10)";
+function commandlet_generate_password {
+    mysql_lambdaquery_read "SELECT LEFT(MD5(RAND()), 10)";
 }
-
 function commandlet_dump_solid {
     local file=`get_sql_filename solid`
     echo dump solid \: $file
@@ -298,9 +301,9 @@ function commandlet_info_structure_func {
     local TABLE_QUERY='SELECT count(*) FROM'
     for TABLE in $( mysql_lambdaquery_showtables ); do
         echo $TABLE "("\
-        $(mysql_lambdaquery_read $DB "$COLUMNS_QUERY '$TABLE'")\
+        $(mysql_lambdaquery_read "$COLUMNS_QUERY '$TABLE'")\
         ") : "\
-        $(mysql_lambdaquery_read $DB "$TABLE_QUERY $TABLE");
+        $(mysql_lambdaquery_read "$TABLE_QUERY $TABLE");
     done
 }
 function commandlet_info_structure_print {
@@ -310,7 +313,37 @@ function commandlet_info_structure_print {
         commandlet_info_structure_func;
     fi
 }
+function commandlet_init_user_credentials {
+    local grants_gl_disabledprivs="'N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N'"
+    local grants_gl_enabledprivs="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'"
+    local grants_gl_settings="'','','','',0,0,0,0,'',NULL"
+    local grants_db_readonly="'Y','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N'"
+    local grants_db_minimal="'Y','Y','Y','Y','Y','Y','N','Y','Y','Y','N','Y','N','N','N','N','N','N','N'"
+    local grants_db_maximal="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'"
 
+    local new_username=$2
+    local new_schemaname=$new_username"_db"
+    local password=`commandlet_generate_password`
+
+    echo ------------------------
+    echo username : $new_username
+    echo password : $password
+    echo database : $new_schemaname
+    echo ------------------------
+
+    # echo
+    echo "CREATE DATABASE '$new_schemaname'"
+    to_mysqldb_query "CREATE DATABASE $new_schemaname"
+    # echo
+    echo "INSERT INTO user VALUES ('localhost' , '$new_username' , '$password' , grants_gl_disabledprivs , grants_gl_settings)"
+    to_mysqldb_query "INSERT INTO user VALUES ('localhost','$new_username',PASSWORD('$password'), $grants_gl_disabledprivs , $grants_gl_settings)"
+    # echo
+    echo "INSERT INTO db VALUES ('localhost' , '$new_schemaname' , '$new_username' , grants_db_minimal)"
+    to_mysqldb_query "INSERT INTO db VALUES ('localhost' , '$new_schemaname' , '$new_username' , $grants_db_minimal)"
+    # echo
+    echo ------------------------
+    echo 'created'
+}
 # echo '$0:' $0; echo '$1:' $1; echo '$2:' $2; echo '$3:' $3; echo '$4:' $4;
 
 # exit
