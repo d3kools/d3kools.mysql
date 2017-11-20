@@ -4,7 +4,7 @@
 # Import functions
 source `which mysql_d3_librc`
 
-avaliable_commands_list='help data schema solid all truncate truncatetable drop'
+avaliable_commands_list='help data schema solid all truncate truncatetable drop one'
 function usage {
     echo ''
     echo 'Modify data in database'
@@ -77,6 +77,13 @@ if test $1 == 'schema'; then
     checkout_database $@
     checkout_table $@
     mysql_import "$2" "$2__$3--schema.sql";
+    exit;
+fi
+
+if test $1 == 'one'; then
+    checkout_database $@
+    checkout_file $@
+    mysql_import "$2" "$3";
     exit;
 fi
 
