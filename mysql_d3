@@ -12,6 +12,8 @@ fi
 dumpcontainer='mysqldump_'
 fileconfig="$HOME/.my.cnf"
 if [ ! -f $fileconfig ]; then
+    # @ERR
+    # /usr/local/bin/mysql_d3: line 15: show_error: команда не найдена
     show_error 'config file not found' $fileconfig
     exit;
 fi
@@ -239,8 +241,15 @@ function commandlet_generate_password {
 }
 function commandlet_dump_solid {
     local file=`get_sql_filename solid`
-    echo dump solid \: $file
+    echo dump solid \: \>\> [$file]
     $cmd_dump --result-file=$file $DB
+}
+function commandlet_dump_one {
+    local file=`get_sql_filename one`
+    echo dump one \: \>\> [$file]
+    # @ TODO
+    # $cmd_dump --result-file=$file $DB
+    show_error 'this function in issue yet' 'dump-one'
 }
 function commandlet_dump_data {
     local arguments='--no-create-info --skip-extended-insert'
@@ -323,15 +332,19 @@ function commandlet_init_user_credentials {
     local grants_db_minimal="'Y','Y','Y','Y','Y','Y','N','Y','Y','Y','N','Y','N','N','N','N','N','N','N'"
     local grants_db_maximal="'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'"
 
-    local new_username=$2
+    local new_username=$1
     local new_schemaname=$new_username"_db"
     local password=`commandlet_generate_password`
 
+    echo
     echo ------------------------
     echo username : $new_username
     echo password : $password
     echo database : $new_schemaname
     echo ------------------------
+
+    echo 'Exit via 5.7 mysql server schema update'
+    exit 0;
 
     # echo
     echo "CREATE DATABASE '$new_schemaname'"
@@ -454,6 +467,12 @@ fi
 if test $commandlet == 'dump-solid'; then
     checkout_database
     commandlet_dump_solid
+    exit;
+fi
+
+if test $commandlet == 'dump-one'; then
+    checkout_database
+    commandlet_dump_one
     exit;
 fi
 
@@ -601,11 +620,34 @@ if test $commandlet == 'info-check'; then
 fi
 
 if test $commandlet == 'info-credentials'; then
-    to_mysqldb_query "SELECT Host,User,Password FROM user"
+    function mysql_version_is_lt_57 {
+        local mysql_version=`to_mysqldb_query "SELECT VERSION()" | sed '1d'`
+        local mysql_version_num=`echo $mysql_version | sed 's/^\([0-9]\.[0-9]\{,2\}\.\{,1\}[0-9]\{,2\}\).*/\1/'`
+        if $( dpkg --compare-versions $mysql_version_num lt 5.7 ); then
+            return 0
+        else
+            return 1
+        fi
+    }
+    mysql_version_is_lt_57
+    mysql_version_old_flag=$?
+    # if [ $mysql_version_old_flag -eq 0 ]; then echo "OLD"; else echo "NEW"; fi
+    if [ $mysql_version_old_flag -eq 0 ]; then
+        # @ERR
+            # ERROR 1054 (42S22) at line 1: Unknown column 'Password' in 'field list'
+        to_mysqldb_query "SELECT Host,User,Password FROM user"
+    else
+        to_mysqldb_query "SELECT Host,User FROM user"
+    fi
     to_mysqldb_query "SELECT Host,Db,User FROM db"
     to_mysqldb_query "SELECT * FROM servers"
-    to_mysqldb_query "SELECT Host,Db FROM host"
+    if [ $mysql_version_old_flag -eq 0 ]; then
+        # @ERR
+            # ERROR 1146 (42S02) at line 1: Table 'mysql.host' doesn't exist
+        to_mysqldb_query "SELECT Host,Db FROM host"
+    fi
     to_mysqldb_query "SELECT Host,Db,User,Table_name FROM tables_priv"
+
     exit;
 fi
 
@@ -624,7 +666,7 @@ fi
 
 if test $commandlet == 'init-credentials'; then
     checkout_name $2
-    commandlet_init_user_credentials
+    commandlet_init_user_credentials $2
     exit;
 fi
 
