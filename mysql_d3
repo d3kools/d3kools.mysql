@@ -315,9 +315,9 @@ function commandlet_info_structure_func {
     local TABLE_QUERY='SELECT count(*) FROM'
     for TABLE in $( mysql_lambdaquery_showtables ); do
         echo $TABLE "("\
-        $(mysql_lambdaquery_mysqldb "$COLUMNS_QUERY '$TABLE'")\
+        $(mysql_lambdaquery_read "$COLUMNS_QUERY '$TABLE'")\
         ") : "\
-        $(mysql_lambdaquery_mysqldb "$TABLE_QUERY $TABLE");
+        $(mysql_lambdaquery_read "$TABLE_QUERY $TABLE");
     done
 }
 function commandlet_info_structure_print {
@@ -433,7 +433,7 @@ if test $commandlet == 'test'; then
 fi
 
 if test $commandlet == 'run-cli'; then
-    $cmd_mysql
+    $cmd_mysql -D $DB
     exit;
 fi
 
