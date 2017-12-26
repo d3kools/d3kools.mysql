@@ -53,6 +53,9 @@ user=`get_config_variable client user`
 function mysql_lambdaquery_read {
     $cmd_mysql -D $DB -e "$1;" | sed '1d';
 }
+function mysql_lambdaquery_mysqldb {
+    $cmd_mysql -D 'mysql' -e "$1;" | sed '1d';
+}
 function mysql_lambdaquery_write {
     $cmd_mysql -D $DB -e "SET foreign_key_checks=0; $1;"
     return $?
@@ -73,7 +76,7 @@ function mysql_import {
     fi
 }
 function to_mysqldb_query {
-    $cmd_mysql -D 'mysql' -e "$1";
+    $cmd_mysql -D 'mysql' -e "$1;"
 }
 function get_sql_filename {
     # check table argument
@@ -237,7 +240,7 @@ function checkout_specified_database {
 
 # init
 function commandlet_generate_password {
-    mysql_lambdaquery_read "SELECT LEFT(MD5(RAND()), 10)";
+    mysql_lambdaquery_mysqldb "SELECT LEFT(MD5(RAND()), 10)";
 }
 function commandlet_dump_solid {
     local file=`get_sql_filename solid`
@@ -312,9 +315,9 @@ function commandlet_info_structure_func {
     local TABLE_QUERY='SELECT count(*) FROM'
     for TABLE in $( mysql_lambdaquery_showtables ); do
         echo $TABLE "("\
-        $(mysql_lambdaquery_read "$COLUMNS_QUERY '$TABLE'")\
+        $(mysql_lambdaquery_mysqldb "$COLUMNS_QUERY '$TABLE'")\
         ") : "\
-        $(mysql_lambdaquery_read "$TABLE_QUERY $TABLE");
+        $(mysql_lambdaquery_mysqldb "$TABLE_QUERY $TABLE");
     done
 }
 function commandlet_info_structure_print {
@@ -335,7 +338,6 @@ function commandlet_init_user_credentials {
     local new_username=$1
     local new_schemaname=$new_username"_db"
     local password=`commandlet_generate_password`
-
     echo
     echo ------------------------
     echo username : $new_username
@@ -343,8 +345,8 @@ function commandlet_init_user_credentials {
     echo database : $new_schemaname
     echo ------------------------
 
-    echo 'Exit via 5.7 mysql server schema update'
-    exit 0;
+    # echo 'Exit via 5.7 mysql server schema update'
+    # exit 0;
 
     # echo
     echo "CREATE DATABASE '$new_schemaname'"
